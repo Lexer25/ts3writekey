@@ -9,7 +9,11 @@ partial class Program
     static void Main(string[] args)
     {
         if (!File.Exists("conf.json"))
-            File.AppendAllText("conf.json", "{\"db_config\": \"User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;\",\"selct_card\": \"cardindev_getlist(1)\"}");
+        File.AppendAllText("conf.json",@$"{{
+  ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
+  ""selct_card"": ""cardindev_getlist(1)""
+}}
+");
         Config_Log log = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
         FbConnection con = DB.Connect(log.db_config);
         con.Open();
