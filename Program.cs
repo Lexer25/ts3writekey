@@ -8,10 +8,13 @@ partial class Program
 {
     static void Main(string[] args)
     {
-        FbConnection con = DB.Connect(System.IO.File.ReadAllText("DBsetting.txt"));
+        if (!File.Exists("conf.json"))
+            File.AppendAllText("conf.json", "{\"db_config\": \"User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;\",\"selct_card\": \"cardindev_getlist(1)\"}");
+        Config_Log log = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
+        FbConnection con = DB.Connect(log.db_config);
         con.Open();
         List<DEV> devs = new List<DEV>();
-        DataTable table = DB.GetDevice(con, "cardindev_getlist(1)");
+        DataTable table = DB.GetDevice(con, log.selct_card);
         for (int i = 0; i < table.Rows.Count; i++)
         {
             var row = table.Rows[i];
@@ -22,11 +25,11 @@ partial class Program
         {
             Console.WriteLine(dev.id.ToString());
             table = DB.GetDor(con, dev.id);
-           
+            
                 //Обработка таблицы Card in dev
             List<Comand> list = new List<Comand>();
             for (int i = 0; i < table.Rows.Count; i++) list.Add(CardinDev(con, dev, table.Rows[i]));
-
+            
 
 
          //   List<Thread> threads = new List<Thread>();
@@ -44,8 +47,7 @@ partial class Program
 
         //com.SetupString("192.168.8.18");
         com.SetupString(dev.ip);
-        Config_Log.log(dev.ip +" | "+ com.ComandExclude($@"ReportStatus"));
-        //Console.WriteLine(row["netaddr"]);
+        Config_Log.log(dev.ip + " | " + com.ComandExclude($@"ReportStatus"));
         if (com.ReportStatus())
         {
             string comand = ComandParser(row, con, com);
@@ -71,7 +73,6 @@ partial class Program
                 {
                     DB.UpdateIdxCard(con, row, anser);//заполнить load_result, load_time, id_card_in_dev=null
                     DB.DeleteCardInDev(con, row);//удалить строку
-
                 }
                 else
                 {

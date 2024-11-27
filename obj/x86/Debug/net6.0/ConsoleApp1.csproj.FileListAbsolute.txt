@@ -15,3 +15,4 @@ C:\Users\Veshsh\source\repos\ConsoleApp1\ConsoleApp1\obj\x86\Debug\net6.0\ref\Co
 C:\Users\Veshsh\source\repos\ConsoleApp1\ConsoleApp1\bin\x86\Debug\net6.0\FirebirdSql.Data.FirebirdClient.dll
 C:\Users\Veshsh\source\repos\ConsoleApp1\ConsoleApp1\obj\x86\Debug\net6.0\ConsoleApp1.csproj.AssemblyReference.cache
 C:\Users\Veshsh\source\repos\ConsoleApp1\ConsoleApp1\obj\x86\Debug\net6.0\ConsoleA.CB28C8CC.Up2Date
+C:\Users\Veshsh\source\repos\ConsoleApp1\ConsoleApp1\obj\x86\Debug\net6.0\ConsoleApp1.sourcelink.json
