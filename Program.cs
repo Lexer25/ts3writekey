@@ -16,7 +16,15 @@ partial class Program
 ");
         Config_Log log = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
         FbConnection con = DB.Connect(log.db_config);
-        con.Open();
+        try
+        {
+            con.Open();
+        }
+        catch {
+            Config_Log.log($@"Не могу подключиться к базе данных {log.db_config}");
+            return; 
+        }   
+  
         List<DEV> devs = new List<DEV>();
         DataTable table = DB.GetDevice(con, log.selct_card);
         for (int i = 0; i < table.Rows.Count; i++)
@@ -25,17 +33,36 @@ partial class Program
             if (row["netaddr"].ToString() != "")
                 devs.Add(new DEV(row));
         }
+       
         foreach (DEV dev in devs)
         {
             Console.WriteLine(dev.id.ToString());
+            
+            Comand com = new Comand();
+            com.SetupString(dev.ip);
+            
+            Config_Log.log(dev.ip + " | " + com.ComandExclude($@"ReportStatus"));
+
             table = DB.GetDor(con, dev.id);
-            
-                //Обработка таблицы Card in dev
-            List<Comand> list = new List<Comand>();
-            for (int i = 0; i < table.Rows.Count; i++) list.Add(CardinDev(con, dev, table.Rows[i]));
-            
 
+            if (com.ReportStatus())
+            {
+                for (int i = 0; i < table.Rows.Count; i++)
+                {
+                    CardinDev(con, dev, table.Rows[i],com);
+                }
 
+            } else
+            {
+
+               
+                for (int i = 0; i < table.Rows.Count; i++)
+                {
+                    DB.UpdateIdxCard(con, table.Rows[i], "no connect");
+                    DB.UpdateCardInDevIncrement(con, table.Rows[i]);
+                }
+
+            }
          //   List<Thread> threads = new List<Thread>();
           /*  Thread thread = new Thread(() => );
             threads.Add(thread);
@@ -44,26 +71,17 @@ partial class Program
         }
         con.Close();
     }
-    private static Comand CardinDev(FbConnection con, DEV dev, DataRow row)
+    private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com)
     {
         //Проверка связи 
-        Comand com = new Comand();
+       
 
         //com.SetupString("192.168.8.18");
-        com.SetupString(dev.ip);
-        Config_Log.log(dev.ip + " | " + com.ComandExclude($@"ReportStatus"));
-        if (com.ReportStatus())
-        {
+
             string comand = ComandParser(row, con, com);
             string log = $@"{dev.ip} | {comand}";
             Config_Log.log(log);
-        }
-        else
-        {
-            DB.UpdateIdxCard(con, row, "no connect");
-            DB.UpdateCardInDevIncrement(con, row);
-        }
-        return com;
+       
     }
     private static string ComandParser(DataRow? row, FbConnection con, Comand comand)
     {
