@@ -36,7 +36,7 @@ partial class Program
        
         foreach (DEV dev in devs)
         {
-            Console.WriteLine(dev.id.ToString());
+           // Console.WriteLine(dev.id.ToString());
             
             // сделал экземпляр контроллера
             Comand com = new Comand();

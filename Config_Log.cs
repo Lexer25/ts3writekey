@@ -20,7 +20,7 @@ namespace ConsoleApp1
         public static void log(string log)
         {
             Console.WriteLine(log);
-            File.AppendAllText(@"log.txt", log + Environment.NewLine);
+            File.AppendAllText(@"log.txt", DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ss") +" "+ log + Environment.NewLine);
         }
     }
 }
