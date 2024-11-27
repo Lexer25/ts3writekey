@@ -38,12 +38,15 @@ partial class Program
         {
             Console.WriteLine(dev.id.ToString());
             
+            // сделал экземпляр контроллера
             Comand com = new Comand();
             com.SetupString(dev.ip);
             
-            Config_Log.log(dev.ip + " | " + com.ComandExclude($@"ReportStatus"));
+            Config_Log.log(dev.id+" | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus"));
 
+            //беру список карт для точек прохода указанного контроллера
             table = DB.GetDor(con, dev.id);
+          
 
             if (com.ReportStatus())
             {
@@ -79,7 +82,7 @@ partial class Program
         //com.SetupString("192.168.8.18");
 
             string comand = ComandParser(row, con, com);
-            string log = $@"{dev.ip} | {comand}";
+            string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand}";
             Config_Log.log(log);
        
     }
@@ -89,7 +92,7 @@ partial class Program
         switch ((int)row["operation"])
         {
             case 1:
-                command = $@"writekey door={0}, key=""{row["id_card"]}"", TZ={row["timezones"]}, status={0}";
+                command = $@"writekey door={row["id_reader"]}, key=""{row["id_card"]}"", TZ={row["timezones"]}, status={0}";
                 anser = comand.ComandExclude(command);
                 if (anser.Contains("OK"))
                 {
