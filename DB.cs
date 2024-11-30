@@ -36,20 +36,38 @@ namespace ConsoleApp1
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             return con;
         }
+        public static DataTable Test1(FbConnection con)
+        {
+            string sql = "select count(*) from cards";
+            
+            FbCommand getip = new FbCommand(sql, con);
+
+            var reader = getip.ExecuteReader();
+            DataTable table = new DataTable();
+            table.Load(reader);
+            return table;
+        }
+        
         public static DataTable GetDevice(FbConnection con, string procdb)
         {
             List<DEV> devs = new List<DEV>();
-            FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.netaddr from {procdb} cg join device d on d.id_dev=cg.id_dev join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null", con);
+            FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr from {procdb} 
+                    cg join device d on d.id_dev=cg.id_dev 
+                    join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null", con);
             var reader = getip.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
             return table;
         }
 
-        public static DataTable GetDor(FbConnection con, int id)
+
+        /**Получаю список точек прохода, в которые надо записать/удалить карты
+         * 
+         */
+        public static DataTable GetDor(FbConnection con, int id, string procdb)
         {
 
-            FbCommand getcomand = new FbCommand($@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_getlist(1) cg
+            FbCommand getcomand = new FbCommand($@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
                 join device d on d.id_dev=cg.id_dev
                 join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
                 where d2.id_dev={id}", con);

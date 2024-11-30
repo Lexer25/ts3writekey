@@ -3,28 +3,36 @@ using ConsoleApp1;
 using FirebirdSql.Data.FirebirdClient;
 using System.Data;
 using System.Text.Json;
+using static System.Net.Mime.MediaTypeNames;
 
 partial class Program
 {
     static void Main(string[] args)
     {
+        Config_Log.log($@"Старт программы TS3");
         if (!File.Exists("conf.json"))
         File.AppendAllText("conf.json",@$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
-  ""selct_card"": ""cardindev_getlist(1)""
-}}
-");
+  ""selct_card"": ""cardindev_getlist(1)""}}");
+
+        
+
         Config_Log log = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
+
+        Config_Log.log($@"Подключение к базе данных {log.db_config}");
+
         FbConnection con = DB.Connect(log.db_config);
         try
         {
             con.Open();
+            Config_Log.log($@"Подключение к базе данных выполнено успешно.");
         }
         catch {
-            Config_Log.log($@"Не могу подключиться к базе данных {log.db_config}");
+            Config_Log.log("Не могу подключиться к базе данных "+log.db_config+". Программа завершает работу.");
             return; 
-        }   
-  
+        }
+
+
         List<DEV> devs = new List<DEV>();
         DataTable table = DB.GetDevice(con, log.selct_card);
         for (int i = 0; i < table.Rows.Count; i++)
@@ -34,19 +42,35 @@ partial class Program
                 devs.Add(new DEV(row));
         }
        
+       
+        if(devs.Count == 0)
+        {
+            string mess="Нет данных для загрузки/удаления идентификаторов из контроллеров.";
+            Config_Log.log(mess);
+           // Console.WriteLine(mess);
+
+            mess="Программа TS3 завершает работу: нет данных для работы.";
+            Config_Log.log(mess);
+            //Console.WriteLine(mess);
+            return;
+        }
+
+        Config_Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
+
         foreach (DEV dev in devs)
         {
-           // Console.WriteLine(dev.id.ToString());
-            
+            // Console.WriteLine(dev.id.ToString());
+
+           //беру список карт для точек прохода указанного контроллера
+            table = DB.GetDor(con, dev.id, log.selct_card);
+
             // сделал экземпляр контроллера
             Comand com = new Comand();
             com.SetupString(dev.ip);
-            
-            Config_Log.log(dev.id+" | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus"));
 
-            //беру список карт для точек прохода указанного контроллера
-            table = DB.GetDor(con, dev.id);
-          
+            Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus") + " | count " + table.Rows.Count);
+
+
 
             if (com.ReportStatus())
             {
@@ -73,6 +97,7 @@ partial class Program
             foreach (Thread thread in threads) thread.Join*/
         }
         con.Close();
+        Config_Log.log($@"Стоп программы TS3");
     }
     private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com)
     {

@@ -9,12 +9,15 @@ namespace ConsoleApp1
 {
     class DEV
     {
+        public string ip;
+        public int id;
+        public string controllerName;
         public DEV(DataRow row)
         {
             this.ip =(string) row["netaddr"];
             this.id = (int)row["id_controller"];
+            this.controllerName = (string)row["controllerName"];
         }
-        public string ip;
-        public int id;
+       
     }
 }
