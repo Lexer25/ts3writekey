@@ -76,12 +76,17 @@ namespace ConsoleApp1
             table.Load(reader);
             return table;
         }
-        public static bool UpdateIdxCard(FbConnection con, DataRow row,string result)
+        public static bool UpdateIdxCard(FbConnection con, DataRow row,string result,bool s_e)
         {
+            string id_cardindev = "";
+            if (s_e)
+            {
+                id_cardindev = ",cdx.id_cardindev=null";
+            }
             string sql = $@"update cardidx cdx
                 set cdx.load_time='now',
-                cdx.load_result='{result}',
-                cdx.id_cardindev=null
+                cdx.load_result='{result}'
+                {id_cardindev}
                 where cdx.id_cardindev={row["id_cardindev"]}";
             FbCommand getcomand = new FbCommand(sql, con);
             var reader = getcomand.ExecuteReader();

@@ -18,8 +18,6 @@ partial class Program
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
   ""selct_card"": ""cardindev_getlist(1)""}}");
 
-
-
         log_config.log($@"Подключение к базе данных {log_config.db_config}");
 
         FbConnection con = DB.Connect(log_config.db_config);
@@ -101,7 +99,7 @@ partial class Program
 
             for (int i = 0; i < table.Rows.Count; i++)
             {
-                DB.UpdateIdxCard(con, table.Rows[i], "no connect");
+                DB.UpdateIdxCard(con, table.Rows[i], "no connect",false);
                 DB.UpdateCardInDevIncrement(con, table.Rows[i]);
             }
 
@@ -131,12 +129,12 @@ partial class Program
                 anser = comand.ComandExclude(command);
                 if (anser.Contains("OK"))
                 {
-                    DB.UpdateIdxCard(con, row, anser);//заполнить load_result, load_time, id_card_in_dev=null
+                    DB.UpdateIdxCard(con, row, anser,true);//заполнить load_result, load_time, id_card_in_dev=null
                     DB.DeleteCardInDev(con, row);//удалить строку
                 }
                 else
                 {
-                    DB.UpdateIdxCard(con, row, anser);
+                    DB.UpdateIdxCard(con, row, anser,false);
                     DB.UpdateCardInDevIncrement(con, row);//atent+1
                 }
                 break;
