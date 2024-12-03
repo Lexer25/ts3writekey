@@ -56,12 +56,13 @@ partial class Program
         }
 
         Config_Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
-
+        con.Close();
         foreach (DEV dev in devs)
         {
+            con.Open();
             // Console.WriteLine(dev.id.ToString());
 
-           //беру список карт для точек прохода указанного контроллера
+            //беру список карт для точек прохода указанного контроллера
             table = DB.GetDor(con, dev.id, log.selct_card);
 
             // сделал экземпляр контроллера
@@ -90,13 +91,14 @@ partial class Program
                 }
 
             }
-         //   List<Thread> threads = new List<Thread>();
-          /*  Thread thread = new Thread(() => );
-            threads.Add(thread);
-            thread.Start();
-            foreach (Thread thread in threads) thread.Join*/
+            con.Close();
+            //   List<Thread> threads = new List<Thread>();
+            /*  Thread thread = new Thread(() => );
+              threads.Add(thread);
+              thread.Start();
+              foreach (Thread thread in threads) thread.Join*/
         }
-        con.Close();
+        
         Config_Log.log($@"Стоп программы TS3");
     }
     private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com)

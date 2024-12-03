@@ -101,14 +101,14 @@ namespace ConsoleApp1
         }
         public static bool UpdateCardInDevIncrement(FbConnection con, DataRow row)
         {
-            FbCommand getcomand = new FbCommand($@"update cardindev cd
+                FbCommand getcomand = new FbCommand($@"update cardindev cd
             set cd.attempts=cd.attempts+1
             where cd.id_cardindev={row["id_cardindev"]}", con);
-            //cdx.id_cardindev=null
-            var reader = getcomand.ExecuteReader();
-            DataTable table = new DataTable();
-            table.Load(reader);
-            return true;
+                //cdx.id_cardindev=null
+                var reader = getcomand.ExecuteReader();
+                DataTable table = new DataTable();
+                table.Load(reader);
+                return true;
         } 
     }
 }
