@@ -10,15 +10,17 @@ namespace ConsoleApp1
     {
         public string db_config { get; set; }
         public string selct_card { get; set; } //
+        public bool log_console { get; set; }
         public Config_Log() 
         {
             this.db_config = db_config;
             this.selct_card = selct_card;
-
+            this.log_console = log_console;
         
         }
-        public static void log(string log)
+        public void log(string log)
         {
+            if(log_console)
             Console.WriteLine(log);
             File.AppendAllText(@"log.txt", DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ss") +" "+ log + Environment.NewLine);
         }

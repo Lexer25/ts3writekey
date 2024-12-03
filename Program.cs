@@ -10,26 +10,26 @@ partial class Program
 {
     static void Main(string[] args)
     {
-        Config_Log.log($@"Старт программы TS3");
+        Config_Log log_config = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
+        if (!log_config.log_console) Console.WriteLine("log false in conf.json");
+        log_config.log($@"Старт программы TS3");
         if (!File.Exists("conf.json"))
         File.AppendAllText("conf.json",@$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
   ""selct_card"": ""cardindev_getlist(1)""}}");
 
-        
 
-        Config_Log log_config = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
 
-        Config_Log.log($@"Подключение к базе данных {log_config.db_config}");
+        log_config.log($@"Подключение к базе данных {log_config.db_config}");
 
         FbConnection con = DB.Connect(log_config.db_config);
         try
         {
             con.Open();
-            Config_Log.log($@"Подключение к базе данных выполнено успешно.");
+            log_config.log($@"Подключение к базе данных выполнено успешно.");
         }
         catch {
-            Config_Log.log("Не могу подключиться к базе данных "+log_config.db_config+". Программа завершает работу.");
+            log_config.log("Не могу подключиться к базе данных "+log_config.db_config+". Программа завершает работу.");
             return; 
         }
 
@@ -46,16 +46,16 @@ partial class Program
         if(devs.Count == 0)
         {
             string mess="Нет данных для загрузки/удаления идентификаторов из контроллеров.";
-            Config_Log.log(mess);
+            log_config.log(mess);
            // Console.WriteLine(mess);
 
             mess="Программа TS3 завершает работу: нет данных для работы.";
-            Config_Log.log(mess);
+            log_config.log(mess);
             //Console.WriteLine(mess);
             return;
         }
 
-        Config_Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
+        log_config.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
         con.Close();
 
         List<Thread> threads = new List<Thread>();
@@ -71,7 +71,7 @@ partial class Program
             thread.Join();
         }
 
-        Config_Log.log($@"Стоп программы TS3");
+        log_config.log($@"Стоп программы TS3");
     }
     private static void OneDev(Config_Log log_config,DEV dev) 
     {
@@ -86,12 +86,12 @@ partial class Program
         Comand com = new Comand();
         com.SetupString(dev.ip);
 
-        Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus") + " | count " + table.Rows.Count);
+        log_config.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus") + " | count " + table.Rows.Count);
         if (com.ReportStatus())
         {
             for (int i = 0; i < table.Rows.Count; i++)
             {
-                CardinDev(con, dev, table.Rows[i], com);
+                CardinDev(con, dev, table.Rows[i], com, log_config);
             }
 
         }
@@ -109,7 +109,7 @@ partial class Program
         con.Close();
 
     }
-    private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com)
+    private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com,Config_Log log_config)
     {
         //Проверка связи 
        
@@ -118,7 +118,7 @@ partial class Program
 
             string comand = ComandParser(row, con, com);
             string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand}";
-            Config_Log.log(log);
+            log_config.log(log);
        
     }
     private static string ComandParser(DataRow? row, FbConnection con, Comand comand)
