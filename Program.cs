@@ -10,30 +10,30 @@ partial class Program
 {
     static void Main(string[] args)
     {
-        Config_Log log_config = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
-        if (!log_config.log_console) Console.WriteLine("log false in conf.json");
-        log_config.log($@"Старт программы TS3");
+        Config_Log config_log = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
+        if (!config_log.log_console) Console.WriteLine("log false in conf.json");
+        Config_Log.log($@"Старт программы TS3", config_log);
         if (!File.Exists("conf.json"))
         File.AppendAllText("conf.json",@$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
   ""selct_card"": ""cardindev_getlist(1)""}}");
 
-        log_config.log($@"Подключение к базе данных {log_config.db_config}");
+        ConsoleApp1.Config_Log.log($@"Подключение к базе данных {config_log.db_config}", config_log);
 
-        FbConnection con = DB.Connect(log_config.db_config);
+        FbConnection con = DB.Connect(config_log.db_config);
         try
         {
             con.Open();
-            log_config.log($@"Подключение к базе данных выполнено успешно.");
+            Config_Log.log($@"Подключение к базе данных выполнено успешно.", config_log);
         }
         catch {
-            log_config.log("Не могу подключиться к базе данных "+log_config.db_config+". Программа завершает работу.");
+            Config_Log.log("Не могу подключиться к базе данных "+ config_log.db_config+". Программа завершает работу.", config_log);
             return; 
         }
 
 
         List<DEV> devs = new List<DEV>();
-        DataTable table = DB.GetDevice(con, log_config.selct_card);
+        DataTable table = DB.GetDevice(con, config_log.selct_card);
         for (int i = 0; i < table.Rows.Count; i++)
         {
             var row = table.Rows[i];
@@ -44,34 +44,39 @@ partial class Program
         if(devs.Count == 0)
         {
             string mess="Нет данных для загрузки/удаления идентификаторов из контроллеров.";
-            log_config.log(mess);
+            Config_Log.log(mess, config_log);
            // Console.WriteLine(mess);
 
             mess="Программа TS3 завершает работу: нет данных для работы.";
-            log_config.log(mess);
+            Config_Log.log(mess, config_log);
             //Console.WriteLine(mess);
             return;
         }
 
-        log_config.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
+        Config_Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.", config_log);
         con.Close();
 
         List<Thread> threads = new List<Thread>();
+        Console.WriteLine("threads");
 
         foreach (DEV dev in devs)
         {
-            Thread thread = new Thread(() => OneDev(log_config, dev));
+            Thread thread = new Thread(() => OneDev(config_log, dev, config_log));
             threads.Add(thread);
+            Console.WriteLine("thread_add");
             thread.Start();
+            Console.WriteLine("thread_start");
         }
+        Console.WriteLine("thread_join_s");
         foreach (Thread thread in threads)
         {
             thread.Join();
+            Console.WriteLine("thread_join");
         }
 
-        log_config.log($@"Стоп программы TS3");
+        Config_Log.log($@"Стоп программы TS3", config_log);
     }
-    private static void OneDev(Config_Log log_config,DEV dev) 
+    private static void OneDev(Config_Log log_config,DEV dev,Config_Log config_log) 
     {
         FbConnection con = DB.Connect(log_config.db_config);
         con.Open();
@@ -84,7 +89,7 @@ partial class Program
         Comand com = new Comand();
         com.SetupString(dev.ip);
 
-        log_config.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus") + " | count " + table.Rows.Count);
+        Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus") + " | count " + table.Rows.Count, config_log);
         if (com.ReportStatus())
         {
             for (int i = 0; i < table.Rows.Count; i++)
@@ -107,7 +112,7 @@ partial class Program
         con.Close();
 
     }
-    private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com,Config_Log log_config)
+    private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com,Config_Log config_log)
     {
         //Проверка связи 
        
@@ -116,7 +121,7 @@ partial class Program
 
             string comand = ComandParser(row, con, com);
             string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand}";
-            log_config.log(log);
+            Config_Log.log(log, config_log);
        
     }
     private static string ComandParser(DataRow? row, FbConnection con, Comand comand)
