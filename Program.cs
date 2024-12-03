@@ -3,6 +3,7 @@ using ConsoleApp1;
 using FirebirdSql.Data.FirebirdClient;
 using System.Data;
 using System.Text.Json;
+using System.Threading;
 using static System.Net.Mime.MediaTypeNames;
 
 partial class Program
@@ -17,31 +18,30 @@ partial class Program
 
         
 
-        Config_Log log = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
+        Config_Log log_config = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
 
-        Config_Log.log($@"Подключение к базе данных {log.db_config}");
+        Config_Log.log($@"Подключение к базе данных {log_config.db_config}");
 
-        FbConnection con = DB.Connect(log.db_config);
+        FbConnection con = DB.Connect(log_config.db_config);
         try
         {
             con.Open();
             Config_Log.log($@"Подключение к базе данных выполнено успешно.");
         }
         catch {
-            Config_Log.log("Не могу подключиться к базе данных "+log.db_config+". Программа завершает работу.");
+            Config_Log.log("Не могу подключиться к базе данных "+log_config.db_config+". Программа завершает работу.");
             return; 
         }
 
 
         List<DEV> devs = new List<DEV>();
-        DataTable table = DB.GetDevice(con, log.selct_card);
+        DataTable table = DB.GetDevice(con, log_config.selct_card);
         for (int i = 0; i < table.Rows.Count; i++)
         {
             var row = table.Rows[i];
             if (row["netaddr"].ToString() != "")
                 devs.Add(new DEV(row));
         }
-       
        
         if(devs.Count == 0)
         {
@@ -57,49 +57,57 @@ partial class Program
 
         Config_Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
         con.Close();
+
+        List<Thread> threads = new List<Thread>();
+
         foreach (DEV dev in devs)
         {
-            con.Open();
-            // Console.WriteLine(dev.id.ToString());
-
-            //беру список карт для точек прохода указанного контроллера
-            table = DB.GetDor(con, dev.id, log.selct_card);
-
-            // сделал экземпляр контроллера
-            Comand com = new Comand();
-            com.SetupString(dev.ip);
-
-            Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus") + " | count " + table.Rows.Count);
-
-
-
-            if (com.ReportStatus())
-            {
-                for (int i = 0; i < table.Rows.Count; i++)
-                {
-                    CardinDev(con, dev, table.Rows[i],com);
-                }
-
-            } else
-            {
-
-               
-                for (int i = 0; i < table.Rows.Count; i++)
-                {
-                    DB.UpdateIdxCard(con, table.Rows[i], "no connect");
-                    DB.UpdateCardInDevIncrement(con, table.Rows[i]);
-                }
-
-            }
-            con.Close();
-            //   List<Thread> threads = new List<Thread>();
-            /*  Thread thread = new Thread(() => );
-              threads.Add(thread);
-              thread.Start();
-              foreach (Thread thread in threads) thread.Join*/
+            Thread thread = new Thread(() => OneDev(log_config, dev));
+            threads.Add(thread);
+            thread.Start();
         }
-        
+        foreach (Thread thread in threads)
+        {
+            thread.Join();
+        }
+
         Config_Log.log($@"Стоп программы TS3");
+    }
+    private static void OneDev(Config_Log log_config,DEV dev) 
+    {
+        FbConnection con = DB.Connect(log_config.db_config);
+        con.Open();
+        // Console.WriteLine(dev.id.ToString());
+
+        //беру список карт для точек прохода указанного контроллера
+        DataTable table = DB.GetDor(con, dev.id, log_config.selct_card);
+
+        // сделал экземпляр контроллера
+        Comand com = new Comand();
+        com.SetupString(dev.ip);
+
+        Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + com.ComandExclude($@"ReportStatus") + " | count " + table.Rows.Count);
+        if (com.ReportStatus())
+        {
+            for (int i = 0; i < table.Rows.Count; i++)
+            {
+                CardinDev(con, dev, table.Rows[i], com);
+            }
+
+        }
+        else
+        {
+
+
+            for (int i = 0; i < table.Rows.Count; i++)
+            {
+                DB.UpdateIdxCard(con, table.Rows[i], "no connect");
+                DB.UpdateCardInDevIncrement(con, table.Rows[i]);
+            }
+
+        }
+        con.Close();
+
     }
     private static void CardinDev(FbConnection con, DEV dev, DataRow row,Comand com)
     {
@@ -139,7 +147,6 @@ partial class Program
                 break;
         }
         return command + ">" + anser;
-
     }
 }
 
