@@ -70,6 +70,27 @@ partial class Program
         }
         Log.log($@"thread_end");
 
+
+        //цикл Бухаров.
+        
+        Log.log($@"Сбор версий");
+        List<Thread> getVersion = new List<Thread>();
+        foreach (DEV dev in devs)
+        {
+            Thread thread = new Thread(() => GetVersion(dev));
+            threads.Add(thread);
+            thread.Start();
+        }
+        //ждем завершение всех потоков.
+        foreach (Thread thread in threads)
+        {
+            thread.Join();
+        }
+        Log.log($@"thread_end");
+
+        return;
+
+
         foreach (DEV dev in devs)
         {
             con = DB.Connect(config_log.db_config);
@@ -98,7 +119,21 @@ partial class Program
         COM com = new COM();
         com.SetupString(dev.ip);
         dev.connect = com.ReportStatus();
+        
     }
+    
+    public static void GetVersion(DEV dev)
+    {
+        COM device = new COM();
+        device.SetupString(dev.ip);
+   
+        Console.WriteLine(device.GetVersion());
+       // Console.WriteLine(device.ReportStatus());
+        //string ver = device.GetVersion();
+        //dev.connect = com.ReportStatus();
+       // Log.log($@"Версия контроллера "+ ver);
+    }
+
     private static void OneDev(FbConnection con,Config log_config,DEV dev) 
     {
         //беру список карт для точек прохода указанного контроллера
@@ -112,10 +147,10 @@ partial class Program
         foreach (DataRow row in table.Rows)
         {
             string comand = ComandBuilder(row, con);
-            string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в поток";
+            string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
             cmds.Add(new Command(row, comand));
             Log.log(log);
-            //надо доабавить в лог ответ
+            //надо добавить в лог ответ
         }
         Thread thread = new Thread(() =>
         {
@@ -172,61 +207,3 @@ partial class Program
 }
 
 
-
-
-
-
-
-
-/*using ConsoleApp1;
-using FirebirdSql.Data.FirebirdClient;
-using System.Data;
-using System.Runtime.InteropServices;
-using System.Text;
-List<DEV> ips = new List<DEV>() {
-"192.168.8.18",
-};
-string DBuser= "SYSDBA", DBpassword= "temp", DBpath= " C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB", 
-DBDataSource= "127.0.0.1", DBCharset= "win1251", DBRoule="";
-int DBport= 3050, DBDialect=3, DBConnectionlifetime=15, DBMinPoolSize=0, DBMaxPoolSize=50, DBPacket_Size=8192, DBServerType=0;
-bool DBPooling=true;
-string connectionString = $@"User = {DBuser}; Password = {DBpassword}; Database = {DBpath}; DataSource = {DBDataSource}; Port = {DBport}; 
-            Dialect = {DBDialect}; Charset = {DBCharset}; Role ={DBRoule};Connection lifetime = {DBConnectionlifetime}; Pooling = {DBPooling};
-            MinPoolSize = {DBMinPoolSize}; MaxPoolSize = {DBMaxPoolSize}; Packet Size = {DBPacket_Size}; ServerType = {DBServerType};";
-FbConnection con = new FbConnection(connectionString);
-Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-con.Open();
-FbCommand getip = new FbCommand("select d.id_dev, d.name, d.netaddr, d.config from Device d where d.id_reader is Null", con);
-FbCommand getcomand = new FbCommand("select * from cardindev_getlist(1) order by id_cardindev", con);
-var reader= getip.ExecuteReader();
-DataTable table= new DataTable();
-table.Load(reader);
-for (int i = 0; i < table.Rows.Count; i++)
-{
-    var row = table.Rows[i];
-    if (row["netaddr"].ToString()!="")
-    ips.Add(new DEV);
-}
-reader = getcomand.ExecuteReader();
-table = new DataTable();
-table.Load(reader);
-for (int i = 0; i < table.Rows.Count; i++)
-{
-    var row = table.Rows[i];
-    Console.WriteLine(row["id_dev"]+" | "+row["operation"]);
-}
-con.Close();
-dynamic a = Activator.CreateInstance(Type.GetTypeFromCLSID(Guid.Parse("EAE30322-9FA6-4466-B3AE-DFB1D58813D3")));//load driver by guid
-
-foreach (object ip in ips)
-{
-    Console.WriteLine(ip);
-    a.SetupString = ip;
-    string status = a.Execute($@"ReportStatus");
-    Console.WriteLine(status);
-
-    //Console.WriteLine(a.Execute($@"getkeyCount door= 0"));
-    //Console.WriteLine(a.Execute($@"GetDeviceTime"));
-    string log = ip +" | "+ status;
-    File.AppendAllText(@"log.txt", log + Environment.NewLine);
-}*/
