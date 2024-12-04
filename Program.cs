@@ -52,8 +52,8 @@ partial class Program
         }
 
         Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
-        con.Close();
-
+        //con.Close();
+        Log.log("Проверка связи с контроллерами старт.");
         //готовим список контроллеров, которые на связи
         //и формируем список указателей на потоки.
         List<Thread> threads = new List<Thread>();
@@ -70,9 +70,10 @@ partial class Program
         }
         Log.log($@"thread_end");
 
+        Log.log("Проверка связи с контроллерами стоп.");
 
-        //цикл Бухаров.
-        
+        //цикл Бухаров 1.
+        /*
         Log.log($@"Сбор версий");
         List<Thread> getVersion = new List<Thread>();
         foreach (DEV dev in devs)
@@ -87,6 +88,27 @@ partial class Program
             thread.Join();
         }
         Log.log($@"thread_end");
+        */
+      
+
+        //цикл Бухаров 2.
+
+        Log.log($@"основной цикл работы с контроллером.");
+        List<Thread>  getVersion = new List<Thread>();
+        foreach (DEV dev in devs)
+        {
+            Thread thread = new Thread(() => mainLine(con, config_log, dev));
+            threads.Add(thread);
+            thread.Start();
+        }
+        //ждем завершение всех потоков.
+        foreach (Thread thread in threads)
+        {
+            thread.Join();
+        }
+        Log.log($@"thread_end");
+
+
 
         return;
 
@@ -119,15 +141,54 @@ partial class Program
         COM com = new COM();
         com.SetupString(dev.ip);
         dev.connect = com.ReportStatus();
+        //dev.connect = true;
+
         
     }
     
+    //остновной цикл обработки очереди
+    public static void mainLine(FbConnection con, Config log_config, DEV dev)
+    {
+        DateTime start = DateTime.Now;
+        //получил список команд для обработки
+        DataTable table = DB.GetDor(con, dev.id, log_config.selct_card);
+        Console.WriteLine(@$"sql GetDor_{DateTime.Now - start}");
+        start = DateTime.Now;
+        Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
+        List<Command> cmds = new List<Command>();
+        //подготовка списка команд
+        foreach (DataRow row in table.Rows)
+        {
+            string comand = ComandBuilder(row);
+            string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
+            cmds.Add(new Command(row, comand));
+            Log.log(log);
+        }
+        
+        //Thread thread = new Thread(() =>
+        //{
+        //реализация команд из списка в цикле
+            COM com = new COM();
+            com.SetupString(dev.ip);
+            foreach (Command cmd in cmds)
+            {
+                string answer = com.ComandExclude(cmd.command);
+                AfterComand(answer, con, cmd.dataRow);
+                string log = $@"{dev.id}  | {cmd.dataRow["id_door"]} | {dev.ip} | {cmd.command} > {answer}";
+                Log.log(log);
+            }
+            con.Close();
+        //});
+
+        //Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
+    }
+
     public static void GetVersion(DEV dev)
     {
         COM device = new COM();
         device.SetupString(dev.ip);
-   
-        Console.WriteLine(device.GetVersion());
+        string version = device.ComandExclude("getversion");
+        Console.WriteLine(version);
        // Console.WriteLine(device.ReportStatus());
         //string ver = device.GetVersion();
         //dev.connect = com.ReportStatus();
@@ -146,7 +207,7 @@ partial class Program
         List<Command> cmds = new List<Command>();
         foreach (DataRow row in table.Rows)
         {
-            string comand = ComandBuilder(row, con);
+            string comand = ComandBuilder(row);
             string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
             cmds.Add(new Command(row, comand));
             Log.log(log);
@@ -169,9 +230,9 @@ partial class Program
         Console.WriteLine("thread_start");
         Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
     }
-    private static string ComandBuilder(DataRow? row, FbConnection con)
+    private static string ComandBuilder(DataRow? row)
     {
-        string anser = "", command = "";
+        string command = "";
         switch ((int)row["operation"])
         {
             case 1:
