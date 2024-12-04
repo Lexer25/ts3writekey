@@ -12,142 +12,129 @@ partial class Program
     static List<DEV> devs = new List<DEV>();
     static void Main(string[] args)
     {
-        Config_Log config_log = JsonSerializer.Deserialize<Config_Log>(File.ReadAllText("conf.json"));
+        Config config_log = JsonSerializer.Deserialize<Config>(File.ReadAllText("conf.json"));
         if (!config_log.log_console) Console.WriteLine("log false in conf.json");
-        Config_Log.log($@"Старт программы TS3");
+        Log.log($@"Старт программы TS3");
         if (!File.Exists("conf.json"))
         File.AppendAllText("conf.json",@$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
   ""selct_card"": ""cardindev_getlist(1)""}}");
 
-        ConsoleApp1.Config_Log.log($@"Подключение к базе данных {config_log.db_config}");
+        Log.log($@"Подключение к базе данных {config_log.db_config}");
 
         FbConnection con = DB.Connect(config_log.db_config);
         try
         {
             con.Open();
-            Config_Log.log($@"Подключение к базе данных выполнено успешно.");
+            Log.log($@"Подключение к базе данных выполнено успешно.");
         }
         catch {
-            Config_Log.log("Не могу подключиться к базе данных "+ config_log.db_config+". Программа завершает работу.");
+            Log.log("Не могу подключиться к базе данных "+ config_log.db_config+". Программа завершает работу.");
             return; 
         }
         DataTable table = DB.GetDevice(con, config_log.selct_card);
-        for (int i = 0; i < table.Rows.Count; i++)
+        foreach(DataRow row in table.Rows)
         {
-            var row = table.Rows[i];
-            if (row["netaddr"].ToString() != "")
-                devs.Add(new DEV(row));
+            if (row["netaddr"].ToString() != "") 
+                devs.Add(new DEV(row));  
         }
        
         if(devs.Count == 0)
         {
             string mess="Нет данных для загрузки/удаления идентификаторов из контроллеров.";
-            Config_Log.log(mess);
+            Log.log(mess);
            // Console.WriteLine(mess);
 
             mess="Программа TS3 завершает работу: нет данных для работы.";
-            Config_Log.log(mess);
+            Log.log(mess);
             //Console.WriteLine(mess);
             return;
         }
 
-        Config_Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
+        Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
         con.Close();
 
         //готовим список контроллеров, которые на связи
         //и формируем список указателей на потоки.
         List<Thread> threads = new List<Thread>();
-        for (int i = 0;i < devs.Count-1;i++) 
+        foreach (DEV dev in devs)
         {
-            Thread thread = new Thread(() => GetDev(i));
+            Thread thread = new Thread(() => GetDev(dev));
             threads.Add(thread);
             thread.Start();
-        }
-        
-        
+        }   
         //ждем завершение всех потоков.
         foreach (Thread thread in threads)
         {
             thread.Join();
         }
-        Config_Log.log($@"thread_end");
-
+        Log.log($@"thread_end");
 
         foreach (DEV dev in devs)
         {
-            OneDev(config_log, dev);
+            con = DB.Connect(config_log.db_config);
+            con.Open();
+            if (dev.connect)
+            {
+                OneDev(con, config_log, dev);
+            }
+            else
+            {
+                DB.UpdateIdxCards(con, dev.id);
+                DB.UpdateCardInDevIncrements(con, dev.id);
+                Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect);
+                con.Close();
+            }
             /*Thread thread = new Thread(() => OneDev(config_log, dev,config_log));
             threads.Add(thread);
             Console.WriteLine("thread_add");
             thread.Start();
             Console.WriteLine("thread_start");*/
         }
-
-        Config_Log.log($@"Стоп программы TS3");
+        Log.log($@"Стоп программы TS3");
     }
-    public static void GetDev(int i)
+    public static void GetDev(DEV dev)
     {
         COM com = new COM();
-        com.SetupString(devs[i].ip);
-        devs[i].connect = com.ReportStatus();
+        com.SetupString(dev.ip);
+        dev.connect = com.ReportStatus();
     }
-    
-    //
-    private static void OneDev(Config_Log log_config,DEV dev) 
+    private static void OneDev(FbConnection con,Config log_config,DEV dev) 
     {
-        FbConnection con = DB.Connect(log_config.db_config);
-        con.Open();
-
         //беру список карт для точек прохода указанного контроллера
         DateTime start = DateTime.Now;
         DataTable table = DB.GetDor(con, dev.id, log_config.selct_card);
-        Console.WriteLine(@$"sql GetDor_{DateTime.Now-start}");
+        Console.WriteLine(@$"sql GetDor_{DateTime.Now - start}");
         start = DateTime.Now;
         // сделал экземпляр контроллера
-
-        Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
-        if (dev.connect)
+        Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
+        List<Command> cmds = new List<Command>();
+        foreach (DataRow row in table.Rows)
+        {
+            string comand = ComandBuilder(row, con);
+            string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в поток";
+            cmds.Add(new Command(row, comand));
+            Log.log(log);
+            //надо доабавить в лог ответ
+        }
+        Thread thread = new Thread(() =>
         {
             COM com = new COM();
             com.SetupString(dev.ip);
-            List<Command> cmds = new List<Command>();
-            foreach (DataRow row in table.Rows)
+            foreach (Command cmd in cmds)
             {
-
-                //Console.WriteLine(i);
-                string comand = ComandBuilder(row, con, com);
-                string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > start";
-                cmds.Add(new Command(row, comand));
-                Config_Log.log(log);
-                //надо доабавить в лог ответ
+                string anser = com.ComandExclude(cmd.command);
+                AfterComand(anser, con, cmd.dataRow);
+                string log = $@"{dev.id}  | {cmd.dataRow["id_door"]} | {dev.ip} | {cmd.command} > {anser}";
+                Log.log(log);
             }
-            Thread thread = new Thread(() =>
-            {
-                foreach (Command cmd in cmds)
-                {
-                    string anser = com.ComandExclude(cmd.command);
-                    AfterComand(anser,con, cmd.dataRow);
-                    string log = $@"{dev.id}  | {cmd.dataRow["id_door"]} | {dev.ip} | {cmd.command} > {anser}";
-                    Config_Log.log(log);
-                }
-                con.Close();
-            });
-            thread.Start();
-            Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
-        }
-        else
-        {
-            for (int i = 0; i < table.Rows.Count; i++)
-            {
-                DB.UpdateIdxCard(con, table.Rows[i], "no connect",false);
-                DB.UpdateCardInDevIncrement(con, table.Rows[i]);
-            }
-            Console.WriteLine(@$"sql_no_con_{DateTime.Now - start}");
             con.Close();
-        }
+        });
+        thread.Start();
+        Console.WriteLine("thread_start");
+        Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
     }
-    private static string ComandBuilder(DataRow? row, FbConnection con, COM comand)
+    private static string ComandBuilder(DataRow? row, FbConnection con)
     {
         string anser = "", command = "";
         switch ((int)row["operation"])
