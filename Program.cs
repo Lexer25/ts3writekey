@@ -55,6 +55,8 @@ partial class Program
         Config_Log.log("Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров.");
         con.Close();
 
+        //готовим список контроллеров, которые на связи
+        //и формируем список указателей на потоки.
         List<Thread> threads = new List<Thread>();
         for (int i = 0;i < devs.Count-1;i++) 
         {
@@ -62,11 +64,16 @@ partial class Program
             threads.Add(thread);
             thread.Start();
         }
+        
+        
+        //ждем завершение всех потоков.
         foreach (Thread thread in threads)
         {
             thread.Join();
         }
         Console.WriteLine("thread_end");
+        Config_Log.log($@"thread_end");
+
 
         foreach (DEV dev in devs)
         {
@@ -86,6 +93,8 @@ partial class Program
         com.SetupString(devs[i].ip);
         devs[i].connect = com.ReportStatus();
     }
+    
+    //
     private static void OneDev(Config_Log log_config,DEV dev,Config_Log config_log) 
     {
         FbConnection con = DB.Connect(log_config.db_config);
@@ -101,16 +110,19 @@ partial class Program
         Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
         if (dev.connect)
         {
-            for (int i = 0; i < table.Rows.Count; i++)
-            {
                 Comand com = new Comand();
                 com.SetupString(dev.ip);
+
+            for (int i = 0; i < table.Rows.Count; i++)
+            {
+                
                 //Console.WriteLine(i);
                 string comand = ComandBuilder(table.Rows[i], con, com);
                 string anser = com.ComandExclude(comand);
-                AfterComand(anser,con, table.Rows[i]);
-                string log = $@"{dev.id}  | {table.Rows[i]["id_door"]} | {dev.ip} | {comand}";
+                AfterComand(anser,con, table.Rows[i]);//фиксирую резуьтат в базе данных (в зависимости от ответа
+                string log = $@"{dev.id}  | {table.Rows[i]["id_door"]} | {dev.ip} | {comand} > {anser}";
                 Config_Log.log(log);
+                //надо доабавить в лог ответ
             }
             Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
             con.Close();
