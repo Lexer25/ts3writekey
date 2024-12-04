@@ -60,11 +60,11 @@ namespace ConsoleApp1
 
 
         /**Получаю список точек прохода, в которые надо записать/удалить карты
-         * 
+         * input id - id контроллера
          */
         public static DataTable GetDor(FbConnection con, int id, string procdb)
         {
-
+            DateTime start=DateTime.Now;
             FbCommand getcomand = new FbCommand($@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
                 join device d on d.id_dev=cg.id_dev
                 join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
@@ -72,6 +72,7 @@ namespace ConsoleApp1
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
+            Log.log($@"Время выполнения запроса GetDoor {DateTime.Now - start}");
             return table;
         }
         public static bool UpdateIdxCard(FbConnection con, DataRow row,string result,bool s_e)

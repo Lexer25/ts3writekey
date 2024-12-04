@@ -15,7 +15,7 @@ namespace ConsoleApp1
             {
                 Console.WriteLine(log);
                 StreamWriter SW = File.AppendText(@"log.txt");
-                SW.WriteLine(DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ss") + " " + log + Environment.NewLine);
+                SW.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " " + log + Environment.NewLine);
                 SW.Close();
             }
         }
