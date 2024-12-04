@@ -18,9 +18,8 @@ namespace ConsoleApp1
             this.log_console = log_console;
         
         }
-        public static void log(string log, Config_Log cl)
+        public static void log(string log)
         {
-            if(cl.log_console)
             Console.WriteLine(log);
             File.AppendAllText(@"log.txt", DateTime.UtcNow.ToString("yyyy-MM-dd HH-mm-ss") +" "+ log + Environment.NewLine);
         }

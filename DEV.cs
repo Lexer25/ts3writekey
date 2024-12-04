@@ -12,6 +12,7 @@ namespace ConsoleApp1
         public string ip;
         public int id;
         public string controllerName;
+        public bool connect;
         public DEV(DataRow row)
         {
             this.ip =(string) row["netaddr"];
