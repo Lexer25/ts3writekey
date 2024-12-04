@@ -71,13 +71,12 @@ partial class Program
         {
             thread.Join();
         }
-        Console.WriteLine("thread_end");
         Config_Log.log($@"thread_end");
 
 
         foreach (DEV dev in devs)
         {
-            OneDev(config_log, dev, config_log);
+            OneDev(config_log, dev);
             /*Thread thread = new Thread(() => OneDev(config_log, dev,config_log));
             threads.Add(thread);
             Console.WriteLine("thread_add");
@@ -89,13 +88,13 @@ partial class Program
     }
     public static void GetDev(int i)
     {
-        Comand com = new Comand();
+        COM com = new COM();
         com.SetupString(devs[i].ip);
         devs[i].connect = com.ReportStatus();
     }
     
     //
-    private static void OneDev(Config_Log log_config,DEV dev,Config_Log config_log) 
+    private static void OneDev(Config_Log log_config,DEV dev) 
     {
         FbConnection con = DB.Connect(log_config.db_config);
         con.Open();
@@ -110,22 +109,32 @@ partial class Program
         Config_Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
         if (dev.connect)
         {
-                Comand com = new Comand();
-                com.SetupString(dev.ip);
-
-            for (int i = 0; i < table.Rows.Count; i++)
+            COM com = new COM();
+            com.SetupString(dev.ip);
+            List<Command> cmds = new List<Command>();
+            foreach (DataRow row in table.Rows)
             {
-                
+
                 //Console.WriteLine(i);
-                string comand = ComandBuilder(table.Rows[i], con, com);
-                string anser = com.ComandExclude(comand);
-                AfterComand(anser,con, table.Rows[i]);//фиксирую резуьтат в базе данных (в зависимости от ответа
-                string log = $@"{dev.id}  | {table.Rows[i]["id_door"]} | {dev.ip} | {comand} > {anser}";
+                string comand = ComandBuilder(row, con, com);
+                string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > start";
+                cmds.Add(new Command(row, comand));
                 Config_Log.log(log);
                 //надо доабавить в лог ответ
             }
+            Thread thread = new Thread(() =>
+            {
+                foreach (Command cmd in cmds)
+                {
+                    string anser = com.ComandExclude(cmd.command);
+                    AfterComand(anser,con, cmd.dataRow);
+                    string log = $@"{dev.id}  | {cmd.dataRow["id_door"]} | {dev.ip} | {cmd.command} > {anser}";
+                    Config_Log.log(log);
+                }
+                con.Close();
+            });
+            thread.Start();
             Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
-            con.Close();
         }
         else
         {
@@ -138,20 +147,7 @@ partial class Program
             con.Close();
         }
     }
-    private static void WritekeyDor(string anser, FbConnection con, DataRow? row)
-    {
-        if (anser.Contains("OK"))
-        {
-            DB.UpdateIdxCard(con, row, anser, true);//заполнить load_result, load_time, id_card_in_dev=null
-            DB.DeleteCardInDev(con, row);//удалить строку
-        }
-        else
-        {
-            DB.UpdateIdxCard(con, row, anser, false);
-            DB.UpdateCardInDevIncrement(con, row);//atent+1
-        }
-    }
-    private static string ComandBuilder(DataRow? row, FbConnection con, Comand comand)
+    private static string ComandBuilder(DataRow? row, FbConnection con, COM comand)
     {
         string anser = "", command = "";
         switch ((int)row["operation"])
@@ -170,8 +166,17 @@ partial class Program
         switch ((int)row["operation"])
         {
             case 1:
-                WritekeyDor(anser, con,row);
-                break;
+                    if (anser.Contains("OK"))
+                    {
+                        DB.UpdateIdxCard(con, row, anser, true);//заполнить load_result, load_time, id_card_in_dev=null
+                        DB.DeleteCardInDev(con, row);//удалить строку
+                    }
+                    else
+                    {
+                        DB.UpdateIdxCard(con, row, anser, false);
+                        DB.UpdateCardInDevIncrement(con, row);//atent+1
+                    }
+                    break;
             case 2:
                 DB.DeleteCardInDev(con, row);
                 break;

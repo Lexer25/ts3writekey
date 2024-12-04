@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp1
 {
-    public class Comand
+    public class COM
     {
         dynamic a;
-        public Comand()
+        public COM()
         {
             a = Activator.CreateInstance(Type.GetTypeFromCLSID(Guid.Parse("EAE30322-9FA6-4466-B3AE-DFB1D58813D3")));//load driver by guid
         }
