@@ -26,6 +26,11 @@ partial class Program
         try
         {
             con.Open();
+            if(con.State != ConnectionState.Open)
+            {
+                Log.log($@"Подключение к базе не удалось.");
+                return;
+            }
             Log.log($@"Подключение к базе данных выполнено успешно.");
         }
         catch {
