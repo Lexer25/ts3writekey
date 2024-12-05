@@ -58,17 +58,35 @@ namespace ConsoleApp1
             return table;
         }
 
+        public static DataTable GetDeviceList(FbConnection con, string procdb)
+        {
+            List<DEV> devs = new List<DEV>();
+            FbCommand getip = new FbCommand(@$"select first 5 d.id_dev as id_controller, d.name as controllerName, d.netaddr from device d
+where d.id_reader is null", con);
+            var reader = getip.ExecuteReader();
+            DataTable table = new DataTable();
+            table.Load(reader);
+            return table;
+        }
+
+
+
 
         /**Получаю список точек прохода, в которые надо записать/удалить карты
          * input id - id контроллера
          */
         public static DataTable GetDor(FbConnection con, int id, string procdb)
         {
+            
             DateTime start=DateTime.Now;
-            FbCommand getcomand = new FbCommand($@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
+            string sql = $@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
                 join device d on d.id_dev=cg.id_dev
                 join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
-                where d2.id_dev={id}", con);
+                where d2.id_dev={id}";
+           // Console.WriteLine("sql "+ sql);
+            
+            FbCommand getcomand = new FbCommand(sql, con);
+ 
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
@@ -84,7 +102,7 @@ namespace ConsoleApp1
             }
             string sql = $@"update cardidx cdx
                 set cdx.load_time='now',
-                cdx.load_result='{result}'
+                cdx.load_result='{result.Substring(0, Math.Min(result.Length, 100))}'
                 {id_cardindev}
                 where cdx.id_cardindev={row["id_cardindev"]}";
             FbCommand getcomand = new FbCommand(sql, con);
