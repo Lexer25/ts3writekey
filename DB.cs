@@ -77,8 +77,6 @@ where d.id_reader is null", con);
          */
         public static DataTable GetDor(FbConnection con, int id, string procdb)
         {
-            
-            DateTime start=DateTime.Now;
             string sql = $@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
                 join device d on d.id_dev=cg.id_dev
                 join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
@@ -90,8 +88,7 @@ where d.id_reader is null", con);
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
-            Log.log($@"Время выполнения запроса GetDoor {DateTime.Now - start}");
-            return table;
+           return table;
         }
         public static bool UpdateIdxCard(FbConnection con, DataRow row,string result,bool s_e)
         {
@@ -132,16 +129,18 @@ where d.id_reader is null", con);
                 table.Load(reader);
                 return true;
         }
-        public static bool UpdateIdxCards(FbConnection con, int id)
+        public static bool UpdateIdxCardsNoConnect(FbConnection con, int id)
         {
             string sql = $@"update cardidx cdx
                 set cdx.load_time='now',
                 cdx.load_result='no connect'
-                where cdx.id_dev in (
+                where  cdx.id_cardindev is not null
+                and cdx.id_dev in (
                 select d.id_dev from device d
                 join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null
                 where d.id_reader in (0,1)
                 and  d2.id_dev={id})";
+            //Log.log("142 UpdateIdxCardsNoConnect " + sql);
             FbCommand getcomand = new FbCommand(sql, con);
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
