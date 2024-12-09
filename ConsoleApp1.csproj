@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
     <PlatformTarget>x86</PlatformTarget>
     <Platforms>AnyCPU;x86</Platforms>
+    <FileVersion>1.0.0.2</FileVersion>
+    <AssemblyVersion>1.0.0.2</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

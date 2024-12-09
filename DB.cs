@@ -80,7 +80,8 @@ where d.id_reader is null", con);
             string sql = $@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
                 join device d on d.id_dev=cg.id_dev
                 join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
-                where d2.id_dev={id}";
+                where d2.id_dev={id}
+                order by cg.id_cardindev";
            // Console.WriteLine("sql "+ sql);
             
             FbCommand getcomand = new FbCommand(sql, con);

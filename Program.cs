@@ -63,12 +63,13 @@ partial class Program
 
         Log.log("64 Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров. Время выполнения " + (DateTime.Now - startMain));
 
+        /*
         foreach(DEV dev in devs)
         {
             Log.log($@"68 {dev.id} | {dev.ip}");
 
         }
-            
+          */  
             //con.Close();
         Log.log("70 Начинаю основной поток. Время выполнения " + (DateTime.Now - startMain));
        
@@ -125,15 +126,18 @@ partial class Program
 
         if (com.ReportStatus())
         {
-            //получил список команд для обработки
-            Log.log("189 Есть связь с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
+            //Log.log("129 Есть связь test " + com.ReportStatus()); return;
 
-          
+
+            //получил список команд для обработки
+            //Log.log("189 Есть связь с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
+
+
 
             DataTable table = DB.GetDor(con, dev.id, config_log.selct_card);
             Console.WriteLine(@$"sql GetDor_{DateTime.Now - start}");
             start = DateTime.Now;
-            Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
+            Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
              List<Command> cmds = new List<Command>();
 
 
@@ -163,12 +167,12 @@ partial class Program
         else // если нет связи, то увеличиваяю количество попыток с указанием, что нет связи
         {
             //нет связи - это происходит на 2,2 сек после старта программы
-            Log.log("213 Нет связи с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
+            //Log.log("213 Нет связи с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
             DB.UpdateIdxCardsNoConnect(con, dev.id); //зафиксировал no connect
-            Log.log("215 Обновил cardIdx not connect id_dev=" + dev.id + " IP " + dev.ip + ",  время выполнения " + (DateTime.Now - start));
+            //Log.log("215 Обновил cardIdx not connect id_dev=" + dev.id + " IP " + dev.ip + ",  время выполнения " + (DateTime.Now - start));
 
             DB.UpdateCardInDevIncrements(con, dev.id);//attempt+1
-            Log.log("215 Обновил cardIndev not connect id_dev=" + dev.id + " IP " + dev.ip + "  время выполнения " + (DateTime.Now - start));
+            //Log.log("215 Обновил cardIndev not connect id_dev=" + dev.id + " IP " + dev.ip + "  время выполнения " + (DateTime.Now - start));
 
 
 
