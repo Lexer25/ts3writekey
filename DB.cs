@@ -66,8 +66,24 @@ namespace ConsoleApp1
             return table;
         }
 
+<<<<<<< HEAD
 <<<<<<< main
 =======
+=======
+        public static DataTable GetDeviceList(FbConnection con, string procdb)
+        {
+            List<DEV> devs = new List<DEV>();
+            FbCommand getip = new FbCommand(@$"select first 5 d.id_dev as id_controller, d.name as controllerName, d.netaddr from device d
+where d.id_reader is null", con);
+            var reader = getip.ExecuteReader();
+            DataTable table = new DataTable();
+            table.Load(reader);
+            return table;
+        }
+
+
+
+>>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
 
         /** Список всех контроллеров.
          * 
@@ -92,10 +108,10 @@ where d.id_reader is null", con);
          */
         public static DataTable GetDor(FbConnection con, int id, string procdb)
         {
-            DateTime start=DateTime.Now;
-            FbCommand getcomand = new FbCommand($@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
+            string sql = $@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
                 join device d on d.id_dev=cg.id_dev
                 join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
+<<<<<<< HEAD
 <<<<<<< main
                 where d2.id_dev={id}", con);
 =======
@@ -104,16 +120,22 @@ where d.id_reader is null", con);
 
             sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1, {id}) cg
              order by cg.id_cardindev";
+=======
+                where d2.id_dev={id}
+                order by cg.id_cardindev";
+>>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
            // Console.WriteLine("sql "+ sql);
             
             FbCommand getcomand = new FbCommand(sql, con);
  
+<<<<<<< HEAD
 >>>>>>> local
+=======
+>>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
-            Log.log($@"Время выполнения запроса GetDoor {DateTime.Now - start}");
-            return table;
+           return table;
         }
 
 
@@ -127,7 +149,7 @@ where d.id_reader is null", con);
             }
             string sql = $@"update cardidx cdx
                 set cdx.load_time='now',
-                cdx.load_result='{result}'
+                cdx.load_result='{result.Substring(0, Math.Min(result.Length, 100))}'
                 {id_cardindev}
                 where cdx.id_cardindev={row["id_cardindev"]}";
             FbCommand getcomand = new FbCommand(sql, con);
@@ -157,16 +179,18 @@ where d.id_reader is null", con);
                 table.Load(reader);
                 return true;
         }
-        public static bool UpdateIdxCards(FbConnection con, int id)
+        public static bool UpdateIdxCardsNoConnect(FbConnection con, int id)
         {
             string sql = $@"update cardidx cdx
                 set cdx.load_time='now',
                 cdx.load_result='no connect'
-                where cdx.id_dev in (
+                where  cdx.id_cardindev is not null
+                and cdx.id_dev in (
                 select d.id_dev from device d
                 join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null
                 where d.id_reader in (0,1)
                 and  d2.id_dev={id})";
+            //Log.log("142 UpdateIdxCardsNoConnect " + sql);
             FbCommand getcomand = new FbCommand(sql, con);
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
