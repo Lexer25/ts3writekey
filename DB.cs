@@ -5,6 +5,7 @@ using System.ComponentModel.Design;
 using System.Data;
 using System.Linq;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,16 +37,23 @@ namespace ConsoleApp1
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             return con;
         }
-        public static DataTable Test1(FbConnection con)
+        
+        /** Список всех записей из таблицы cardindev
+         * 
+         * 
+         */
+        public static DataTable cardInDevGetList(FbConnection con, string procd)
         {
-            string sql = "select count(*) from cards";
+            string sql = @$"select * from {procd}";
             FbCommand getip = new FbCommand(sql, con);
             var reader = getip.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
             return table;
         }
-        
+        /** Список контроллеров, куда надо будет загружать карты
+         * 
+         */
         public static DataTable GetDevice(FbConnection con, string procdb)
         {
             List<DEV> devs = new List<DEV>();
@@ -58,9 +66,29 @@ namespace ConsoleApp1
             return table;
         }
 
+<<<<<<< main
+=======
 
-        /**Получаю список точек прохода, в которые надо записать/удалить карты
-         * input id - id контроллера
+        /** Список всех контроллеров.
+         * 
+         */
+        public static DataTable GetDeviceList(FbConnection con, string procdb)
+        {
+            List<DEV> devs = new List<DEV>();
+            FbCommand getip = new FbCommand(@$"select d.id_dev as id_controller, d.name as controllerName, d.netaddr from device d
+where d.id_reader is null", con);
+            var reader = getip.ExecuteReader();
+            DataTable table = new DataTable();
+            table.Load(reader);
+            return table;
+        }
+
+
+
+>>>>>>> local
+
+        /**Получаю список для указанной точки прохода.
+         * input id - точка прохода!!!
          */
         public static DataTable GetDor(FbConnection con, int id, string procdb)
         {
@@ -68,13 +96,28 @@ namespace ConsoleApp1
             FbCommand getcomand = new FbCommand($@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
                 join device d on d.id_dev=cg.id_dev
                 join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
+<<<<<<< main
                 where d2.id_dev={id}", con);
+=======
+                where d2.id_dev={id}
+                order by cg.id_cardindev";
+
+            sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1, {id}) cg
+             order by cg.id_cardindev";
+           // Console.WriteLine("sql "+ sql);
+            
+            FbCommand getcomand = new FbCommand(sql, con);
+ 
+>>>>>>> local
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
             Log.log($@"Время выполнения запроса GetDoor {DateTime.Now - start}");
             return table;
         }
+
+
+
         public static bool UpdateIdxCard(FbConnection con, DataRow row,string result,bool s_e)
         {
             string id_cardindev = "";
@@ -146,5 +189,36 @@ namespace ConsoleApp1
             table.Load(reader);
             return true;
         }
+
+
+        public static bool checkProc(FbConnection con, string procName)
+        {
+            string sql = $@"SELECT * FROM RDB$PROCEDURES WHERE RDB$PROCEDURE_NAME ='{procName}'";
+            FbCommand getcomand = new FbCommand(sql, con);
+            //cdx.id_cardindev=null
+            var reader = getcomand.ExecuteReader();
+          return reader.HasRows;
+        }
+
+
+        /**Получаю список "дочек" - точек прохода
+         * 
+         */
+      public static DataTable GetChildId(FbConnection con, int id_dev)
+        {
+            string sql = $@"select d.id_dev from device d
+                join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null
+                where d.id_reader is not null
+                and d2.id_dev= {id_dev}
+                '";
+             FbCommand getcomand = new FbCommand(sql, con);
+            //cdx.id_cardindev=null
+            var reader = getcomand.ExecuteReader();
+            DataTable table = new DataTable();
+            table.Load(reader);
+            return table;
+        }
+
+     
     }
 }
