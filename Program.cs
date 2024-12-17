@@ -23,73 +23,48 @@ partial class Program
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
   ""selct_card"": ""cardindev_getlist(1)""}}");
 
-        Log.log($@"Подключение к базе данных {config_log.db_config}");
+        Log.log($@"26 Подключение к базе данных {config_log.db_config}");
 
         FbConnection con = DB.Connect(config_log.db_config);
         try
         {
             con.Open();
-<<<<<<< HEAD
-<<<<<<< main
-            Log.log($@"Подключение к базе данных выполнено успешно.");
-=======
-            if(con.State != ConnectionState.Open)
-            {
-                Log.log($@"33 Подключение к базе не удалось. Программа TS3 завершает работу.");
-                return;
-            }
-            Log.log($@"36 Подключение к базе данных выполнено успешно.");
->>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
-        }
-        catch {
-            Log.log("39 Не могу подключиться к базе данных "+ config_log.db_config+". Проверьте строку подключения. Программа TS3 завершает работу.");
-            return; 
-        }
-<<<<<<< HEAD
-=======
-            if (con.State != ConnectionState.Open)
-            {
-                Log.log($@"33 Подключение к базе не удалось. Программа TS3 завершает работу.");
-                return;
-            } else {
+         
                 Log.log($@"36 Подключение к базе данных выполнено успешно.");
                 string procName = "CARDINDEV_TS3";
-                if (DB.checkProc(con, procName)) {
+                if (DB.checkProc(con, procName))
+                {
                     Log.log($@"39 Процедура {procName} в базе данных зарегистрирована.");
-                } else
+                }
+                else
                 {
                     Log.log($@"42 Процедура {procName} в базе данных НЕ зарегистрирована. Программа завершает работу.");
                     return;
                 }
-            }
-=======
-        
-
-        //Получаю список контроллеров, для которых есть очередь.
-        DataTable table = DB.GetDevice(con, config_log.selct_card);
-        foreach(DataRow row in table.Rows)
-        {
-            if (row["netaddr"].ToString() != "") 
-                devs.Add(new DEV(row));  
->>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
+         
         }
-        catch {
-            Log.log("48 Не могу подключиться к базе данных "+ config_log.db_config+". Проверьте строку подключения. Программа TS3 завершает работу.");
-            return; 
+
+        catch (Exception Ex)
+        {
+            Log.log("48 Не могу подключиться к базе данных " + config_log.db_config + ". Проверьте строку подключения. Программа TS3 завершает работу.");
+            Log.log("82 \n" + Ex.Message.ToString());
+            return;
         }
 
 
         //Получаю список контроллеров, для которых есть очередь.
       
->>>>>>> local
-        DataTable table = DB.GetDevice(con, config_log.selct_card);
-        Log.log("55 Имеется " + DB.cardInDevGetList(con, config_log.selct_card).Rows.Count + " записей в очереди для  " + table.Rows.Count + " контроллеров.");
 
+        DataTable table = DB.GetDevice(con, config_log.selct_card);
+        Log.log("55 Имеется " + DB.cardInDevGetList(con, config_log.selct_card).Rows.Count + " записей в очереди для  " + table.Rows.Count + " контроллеров. Время выполнения " + (DateTime.Now- startMain));
+
+        
+        //теперь проверяю настройки: разделяю список на тех, у кого есть IP адрес. и у кого нет IP адреса.
         foreach (DataRow row in table.Rows)
         {
             if (row["netaddr"].ToString() != "")
             {
-                devs.Add(new DEV(row));
+                devs.Add(new DEV(row)); //у этих есть IP адрес, и далее буду работать с ними.
             } else
             {
                devListNoIP.Add(new DEV(row));//тут собраны контроллеры без IP адреса
@@ -115,14 +90,7 @@ partial class Program
 
         Log.log("64 Имеются данных для загрузки/удаления идентификаторов в " + devs.Count+ " контроллеров. Время выполнения " + (DateTime.Now - startMain));
 
-        /*
-        foreach(DEV dev in devs)
-        {
-            Log.log($@"68 {dev.id} | {dev.ip}");
-
-        }
-          */  
-            //con.Close();
+      
         Log.log("70 Начинаю основной поток. Время выполнения " + (DateTime.Now - startMain));
        
         List <Thread> threads = new List<Thread>();
@@ -141,11 +109,10 @@ partial class Program
         }
         Log.log("92 Завершение работы TS3. Время выполнения " + (DateTime.Now - startMain));
 
-<<<<<<< HEAD
 
         //цикл Бухаров.
         
-<<<<<<< main
+
         Log.log($@"Сбор версий");
         List<Thread> getVersion = new List<Thread>();
         foreach (DEV dev in devs)
@@ -162,10 +129,9 @@ partial class Program
         Log.log($@"thread_end");
 
         return;
-=======
     }
 
-    //остновной цикл обработки очереди
+    //остновной цикл обработки очереди 16.12.2024
     public static void mainLine(Config config_log, DEV dev)
     {
         //Log.log("168 Старт потока для id_dev=" + dev.id + " IP " + dev.ip);
@@ -201,74 +167,70 @@ partial class Program
         //Log.log("177 Установил подключение к базе данных для объекта для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
         lineStat = lineStat + "|checkConnectionStateDB:" + (DateTime.Now - _start);
 
-        //test
-
-        DataTable id_doors = DB.GetChildId(con, 1);
-
-        foreach(DataRow id in id_doors)
-        {
-
-            Console.WriteLine(id[0]);
-
-        }
-
-        if (com.ReportStatus())
+      
+        if (com.ReportStatus() || true)//если связь с контроллером имеется, то продолжаю работу
         {
             //Log.log("129 Есть связь test " + com.ReportStatus()); return;
 
             lineStat = lineStat + "|checkConnectionStateDevOK:" + (DateTime.Now - _start);
 
-            
-            //получаю список команд для обработки
-            //Log.log("189 Есть связь с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-
-
-
+           //начинаю формировать список команд для последующей обработки
             DataTable table = DB.GetDor(con, dev.id, config_log.selct_card);
             Console.WriteLine(@$"sql GetDor_{DateTime.Now - start}");
 
             lineStat = lineStat + "|getDoor:" + (DateTime.Now - _start);
             start = DateTime.Now;
             Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
-             List<Command> cmds = new List<Command>();
->>>>>>> local
-
-
-        foreach (DEV dev in devs)
-        {
-            con = DB.Connect(config_log.db_config);
-            con.Open();
-            if (dev.connect)
+            
+            
+          
+            List<Command> cmds = new List<Command>();
+            foreach (DataRow row in table.Rows)
             {
-                OneDev(con, config_log, dev);
+                string comand = ComandBuilder(row);
+                string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в поток";
+                cmds.Add(new Command(row, comand));
+                Log.log(log);
+                //надо доабавить в лог ответ
             }
-<<<<<<< main
-            else
-=======
 
-            lineStat = lineStat + "|makeCommandList:" + (DateTime.Now - _start);
 
-            //Thread thread = new Thread(() =>
-            //{
-            //реализация команд из списка в цикле
 
-            foreach (Command cmd in cmds)
->>>>>>> local
+
+            foreach (DEV _dev in devs)
             {
-                DB.UpdateIdxCards(con, dev.id);
-                DB.UpdateCardInDevIncrements(con, dev.id);
-                Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect);
-                con.Close();
+                con = DB.Connect(config_log.db_config);
+                con.Open();
+                if (_dev.connect)
+                {
+                    OneDev(con, config_log, _dev);
+                }
+
+                else
+
+                lineStat = lineStat + "|makeCommandList:" + (DateTime.Now - _start);
+
+                //Thread thread = new Thread(() =>
+                //{
+                //реализация команд из списка в цикле
+
+                foreach (Command cmd in cmds)
+
+                {
+                    DB.UpdateIdxCardsNoConnect(con, dev.id);
+                    DB.UpdateCardInDevIncrements(con, dev.id);
+                    Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect);
+                    con.Close();
+                }
+
+                /*Thread thread = new Thread(() => OneDev(config_log, dev,config_log));
+                threads.Add(thread);
+                Console.WriteLine("thread_add");
+                thread.Start();
+                Console.WriteLine("thread_start");*/
             }
-<<<<<<< main
-            /*Thread thread = new Thread(() => OneDev(config_log, dev,config_log));
-            threads.Add(thread);
-            Console.WriteLine("thread_add");
-            thread.Start();
-            Console.WriteLine("thread_start");*/
-        }
         Log.log($@"Стоп программы TS3");
-=======
+
             lineStat = lineStat + "|makeComandCicle:" + (DateTime.Now - _start);
         }
         else // если нет связи, то увеличиваяю количество попыток с указанием, что нет связи
@@ -292,11 +254,7 @@ partial class Program
         //Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
         Log.log("223  " + lineStat);
         Log.log("224 Стоп потока для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
->>>>>>> local
-=======
-           
-       
->>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
+
     }
     public static void GetDev(DEV dev)
     {
@@ -308,86 +266,7 @@ partial class Program
         
     }
 
-    //остновной цикл обработки очереди
-    public static void mainLine(Config config_log, DEV dev)
-    {
-        //Log.log("168 Старт потока для id_dev=" + dev.id + " IP " + dev.ip);
-        DateTime start = DateTime.Now;
-        COM com = new COM();
-        com.SetupString(dev.ip);
-        //время созадания экземпляра класса примерно 50-60 мс
-        //Log.log("172 Создал экземпляр объекта для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-        
-        FbConnection con = DB.Connect(config_log.db_config);
-        con.Open();
-
-          if (con.State != ConnectionState.Open)
-            {
-                Console.WriteLine("179 no connect db " + config_log.db_config + ". Завершаю поток для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-                return;
-            }
-        //Это происходит на 0,07 сек с начала работы программы.
-        //Log.log("177 Установил подключение к базе данных для объекта для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-
-
-        if (com.ReportStatus())
-        {
-            //Log.log("129 Есть связь test " + com.ReportStatus()); return;
-
-
-            //получил список команд для обработки
-            //Log.log("189 Есть связь с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-
-
-
-            DataTable table = DB.GetDor(con, dev.id, config_log.selct_card);
-            Console.WriteLine(@$"sql GetDor_{DateTime.Now - start}");
-            start = DateTime.Now;
-            Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
-             List<Command> cmds = new List<Command>();
-
-
-            //подготовка списка команд
-            foreach (DataRow row in table.Rows)
-            {
-                string comand = ComandBuilder(row);
-                string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
-                cmds.Add(new Command(row, comand));
-                //Log.log(log);
-            }
-
-
-
-            //Thread thread = new Thread(() =>
-            //{
-            //реализация команд из списка в цикле
-
-            foreach (Command cmd in cmds)
-            {
-                string answer = com.ComandExclude(cmd.command);
-                AfterComand(answer, con, cmd.dataRow);
-                string log = $@"159 {dev.id}  | {cmd.dataRow["id_door"]} | {dev.ip} | {cmd.command} > {answer}";
-                Log.log(log);
-            }
-        }
-        else // если нет связи, то увеличиваяю количество попыток с указанием, что нет связи
-        {
-            //нет связи - это происходит на 2,2 сек после старта программы
-            //Log.log("213 Нет связи с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-            DB.UpdateIdxCardsNoConnect(con, dev.id); //зафиксировал no connect
-            //Log.log("215 Обновил cardIdx not connect id_dev=" + dev.id + " IP " + dev.ip + ",  время выполнения " + (DateTime.Now - start));
-
-            DB.UpdateCardInDevIncrements(con, dev.id);//attempt+1
-            //Log.log("215 Обновил cardIndev not connect id_dev=" + dev.id + " IP " + dev.ip + "  время выполнения " + (DateTime.Now - start));
-
-
-
-        }
-        con.Close();
-       
-        //Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
-        Log.log("224 Стоп потока для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-    }
+  
 
     public static void GetVersion(DEV dev)
     {
