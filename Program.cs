@@ -110,18 +110,6 @@ partial class Program
         
 
 
-        //цикл Бухаров.
-        
-        /*
-        Log.log($@"Сбор версий");
-        List<Thread> getVersion = new List<Thread>();
-        foreach (DEV dev in devs)
-        {
-            Thread thread = new Thread(() => GetVersion(dev));
-            threads.Add(thread);
-            thread.Start();
-        }
-        */
         //ждем завершение всех потоков.
         foreach (Thread thread in threads)
         {
@@ -160,6 +148,8 @@ partial class Program
 
 
         }
+
+
           if (con.State != ConnectionState.Open)
             {
                 Console.WriteLine("179 no connect db " + config_log.db_config + ". Завершаю поток для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
@@ -170,19 +160,19 @@ partial class Program
         lineStat = lineStat + "|checkConnectionStateDB:" + (DateTime.Now - _start);
 
       
-        if (com.ReportStatus() || true)//если связь с контроллером имеется, то продолжаю работу
+        if (com.ReportStatus())//если связь с контроллером имеется, то продолжаю работу
         {
             //Log.log("129 Есть связь test " + com.ReportStatus()); return;
 
             lineStat = lineStat + "|checkConnectionStateDevOK:" + (DateTime.Now - _start);
-
+            
            //начинаю формировать список команд для контроллера для последующей обработки
             DataTable table = DB.GetComandForDevice(con, dev.id, config_log.selct_card);
-            Console.WriteLine(@$"sql GetComandForDevice {DateTime.Now - start}");
+            //Console.WriteLine(@$"183 sql GetComandForDevice {DateTime.Now - start}");
 
             lineStat = lineStat + "|GetComandForDevice:" + (DateTime.Now - _start);
             start = DateTime.Now;
-            Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
+           // Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
             
     
           //формирую лист команд.
@@ -190,18 +180,15 @@ partial class Program
             foreach (DataRow row in table.Rows)
             {
                 string comand = ComandBuilder(row);
-                string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в поток";
+                //string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в поток";
                 cmds.Add(new Command(row, comand));
-                Log.log(log);
+                //Log.log(log);
                 //надо доабавить в лог ответ
             }
-
-            /*
-                if (_dev.connect)
-                {
-                    OneDev(con, config_log, _dev);
-                }
-            */
+            
+            
+            OneDev(con, config_log, dev, com);
+           
 
 
                 lineStat = lineStat + "|makeCommandList:" + (DateTime.Now - _start);
@@ -215,12 +202,12 @@ partial class Program
                 {
                     DB.UpdateIdxCardsNoConnect(con, dev.id);
                     DB.UpdateCardInDevIncrements(con, dev.id);
-                    Log.log(dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect);
-                    con.Close();
+                    //Log.log("215 " + dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect);
+                    //con.Close();
                 }
 
  
-        Log.log($@"Стоп программы TS3");
+       // Log.log($@"220 Стоп процесса для id_dev={dev.id} ip={dev.ip}. Процесс завершен");
 
             lineStat = lineStat + "|makeComandCicle:" + (DateTime.Now - _start);
         }
@@ -243,8 +230,8 @@ partial class Program
         con.Close();
         lineStat = lineStat + "|conClose:" + (DateTime.Now - _start);
         //Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
-        Log.log("223  " + lineStat);
-        Log.log("224 Стоп потока для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
+        Log.log("223  " + lineStat + "|Stio_Time_execite:" + (DateTime.Now - start));
+        //Log.log("224 Стоп потока для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
 
     }
     public static void GetDev(DEV dev)
@@ -268,41 +255,41 @@ partial class Program
       
     }
 
-    private static void OneDev(FbConnection con,Config log_config,DEV dev) 
+    /**
+     * работа с указанным контроллером: выборка списка команда, из запись и фиксация результата.
+     * 
+     */
+    private static void OneDev(FbConnection con,Config log_config,DEV dev, COM com) 
     {
         //беру список карт для точек прохода указанного контроллера
         DateTime start = DateTime.Now;
-        if (con.State == ConnectionState.Open) return;
+        //if (con.State == ConnectionState.Open) return;
    
-        DataTable table = DB.GetDor(con, dev.id, log_config.selct_card);
-        Console.WriteLine(@$"sql GetDor_{DateTime.Now - start}");
+        DataTable table = DB.GetComandForDevice(con, dev.id, log_config.selct_card);
+        Console.WriteLine(@$"281 sql GetComandForDevice_{DateTime.Now - start}");
         start = DateTime.Now;
-        // сделал экземпляр контроллера
-        Log.log("201 "+dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
+       
+        //Log.log("201 "+dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
         List<Command> cmds = new List<Command>();
         foreach (DataRow row in table.Rows)
         {
             string comand = ComandBuilder(row);
-            string log = $@"{dev.id}  | {row["id_door"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
+            //string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
             cmds.Add(new Command(row, comand));
-            Log.log(log);
+            //Log.log(log);
             //надо добавить в лог ответ
         }
         
-        Thread thread = new Thread(() =>
-        {
-            COM com = new COM();
-            com.SetupString(dev.ip);
+
             foreach (Command cmd in cmds)
             {
                 string anser = com.ComandExclude(cmd.command);
                 AfterComand(anser, con, cmd.dataRow);
-                string log = $@"{dev.id}  | {cmd.dataRow["id_door"]} | {dev.ip} | {cmd.command} > {anser}";
+                string log = $@"288 {dev.id}  | {cmd.dataRow["id_reader"]} | {dev.ip} | {cmd.command} > {anser}";
                 Log.log(log);
             }
-            con.Close();
-        });
-        thread.Start();
+           // con.Close();
+ 
         
         Console.WriteLine("thread_start");
         Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
