@@ -45,7 +45,7 @@ namespace ConsoleApp1
         public static DataTable cardInDevGetList(FbConnection con, string procd)
         {
             //string sql = @$"select * from {procd}";
-            string sql = @$"select * from cardindev";
+            string sql = @$"select count(*) from cardindev";
             FbCommand getip = new FbCommand(sql, con);
             var reader = getip.ExecuteReader();
             DataTable table = new DataTable();
