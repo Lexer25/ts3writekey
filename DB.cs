@@ -44,7 +44,8 @@ namespace ConsoleApp1
          */
         public static DataTable cardInDevGetList(FbConnection con, string procd)
         {
-            string sql = @$"select * from {procd}";
+            //string sql = @$"select * from {procd}";
+            string sql = @$"select * from cardindev";
             FbCommand getip = new FbCommand(sql, con);
             var reader = getip.ExecuteReader();
             DataTable table = new DataTable();
@@ -57,9 +58,21 @@ namespace ConsoleApp1
         public static DataTable GetDevice(FbConnection con, string procdb)
         {
             List<DEV> devs = new List<DEV>();
+            /*
             FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr from {procdb} 
                     cg join device d on d.id_dev=cg.id_dev 
                     join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null", con);
+            */
+
+            FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr
+     from CardInDev c
+     join Device d  on (c.id_dev=d.id_dev) and (c.id_db=d.id_db)
+    left join card cc on cc.id_card=c.id_card
+    join device d2 on d2.id_ctrl=d.id_ctrl and (d2.id_devtype in (1,2, 4, 6)) and d2.id_reader is null
+    where (c.id_db=1) and ( 0 <> (select IS_ACTIVE from DEVICE_CHECKACTIVE(d.id_dev)) )", con);
+
+
+
             var reader = getip.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
@@ -85,7 +98,7 @@ where d.id_reader is null", con);
 
 
 
-        /**Получаю список для указанной точки прохода.
+        /**Получаю список команд загрузки для указанной точки прохода.
          * input id - точка прохода!!!
          */
         public static DataTable GetDor(FbConnection con, int id, string procdb)
@@ -99,6 +112,23 @@ where d.id_reader is null", con);
             DataTable table = new DataTable();
             table.Load(reader);
            return table;
+        }
+
+
+        /**Получаю список команд загрузки для указанного контроллера.
+         * input id - контроллер!!!
+         */
+        public static DataTable GetComandForDevice(FbConnection con, int id, string procdb)
+        {
+            string sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1, {id}) cg
+             order by cg.id_cardindev";
+
+            FbCommand getcomand = new FbCommand(sql, con);
+
+            var reader = getcomand.ExecuteReader();
+            DataTable table = new DataTable();
+            table.Load(reader);
+            return table;
         }
 
 
