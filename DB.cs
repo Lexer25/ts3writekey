@@ -66,24 +66,6 @@ namespace ConsoleApp1
             return table;
         }
 
-<<<<<<< HEAD
-<<<<<<< main
-=======
-=======
-        public static DataTable GetDeviceList(FbConnection con, string procdb)
-        {
-            List<DEV> devs = new List<DEV>();
-            FbCommand getip = new FbCommand(@$"select first 5 d.id_dev as id_controller, d.name as controllerName, d.netaddr from device d
-where d.id_reader is null", con);
-            var reader = getip.ExecuteReader();
-            DataTable table = new DataTable();
-            table.Load(reader);
-            return table;
-        }
-
-
-
->>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
 
         /** Список всех контроллеров.
          * 
@@ -101,37 +83,18 @@ where d.id_reader is null", con);
 
 
 
->>>>>>> local
+
 
         /**Получаю список для указанной точки прохода.
          * input id - точка прохода!!!
          */
         public static DataTable GetDor(FbConnection con, int id, string procdb)
         {
-            string sql = $@"select distinct  cg.id_dev as id_door, d.netaddr, d.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from {procdb} cg
-                join device d on d.id_dev=cg.id_dev
-                join device d2 on d2.id_ctrl=d.id_ctrl and  d2.id_reader is null
-<<<<<<< HEAD
-<<<<<<< main
-                where d2.id_dev={id}", con);
-=======
-                where d2.id_dev={id}
-                order by cg.id_cardindev";
-
-            sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1, {id}) cg
+            string  sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1) cg
              order by cg.id_cardindev";
-=======
-                where d2.id_dev={id}
-                order by cg.id_cardindev";
->>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
-           // Console.WriteLine("sql "+ sql);
             
             FbCommand getcomand = new FbCommand(sql, con);
  
-<<<<<<< HEAD
->>>>>>> local
-=======
->>>>>>> 1a3d473a28e9545b9da691278ff912fff2279b1c
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
