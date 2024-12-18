@@ -14,6 +14,8 @@ partial class Program
     static List<DEV> devListNoIP = new List<DEV>();//список контроллеров, для которых не указан IP адрес.
     static void Main(string[] args)
     {
+       
+        
         DateTime startMain = DateTime.Now;
         Config config_log = JsonSerializer.Deserialize<Config>(File.ReadAllText("conf.json"));
         if (!config_log.log_console) Console.WriteLine("log false in conf.json");
@@ -57,7 +59,7 @@ partial class Program
 
         DataTable table = DB.GetDevice(con, config_log.selct_card);
         Log.log("55 Имеется " + DB.cardInDevGetList(con, config_log.selct_card).Rows.Count + " записей в очереди для  " + table.Rows.Count + " контроллеров. Время выполнения " + (DateTime.Now- startMain));
-
+        Console.WriteLine("60");
         
         //теперь проверяю настройки: разделяю список на тех, у кого есть IP адрес. и у кого нет IP адреса.
         foreach (DataRow row in table.Rows)
