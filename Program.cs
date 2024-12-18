@@ -59,7 +59,7 @@ partial class Program
 
         DataTable table = DB.GetDevice(con, config_log.selct_card);
         Log.log("55 Имеется " + DB.cardInDevGetList(con, config_log.selct_card).Rows.Count + " записей в очереди для  " + table.Rows.Count + " контроллеров. Время выполнения " + (DateTime.Now- startMain));
-        Console.WriteLine("60");
+       
         
         //теперь проверяю настройки: разделяю список на тех, у кого есть IP адрес. и у кого нет IP адреса.
         foreach (DataRow row in table.Rows)
@@ -127,8 +127,9 @@ partial class Program
     public static void mainLine(Config config_log, DEV dev)
     {
         //Log.log("168 Старт потока для id_dev=" + dev.id + " IP " + dev.ip);
-        string lineStat = "Start id_dev:" + dev.id;
+       // string lineStat = "Start id_dev:" + dev.id;
         DateTime start = DateTime.Now;
+        string lineStat = "Start id_dev:" + dev.id + "|time:"+start;
         DateTime _start = DateTime.Now;
         COM com = new COM();
         com.SetupString(dev.ip);
