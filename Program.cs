@@ -129,7 +129,7 @@ partial class Program
         //Log.log("168 Старт потока для id_dev=" + dev.id + " IP " + dev.ip);
        // string lineStat = "Start id_dev:" + dev.id;
         DateTime start = DateTime.Now;
-        string lineStat = "Start id_dev:" + dev.id + "|time:"+start;
+        string lineStat = "132 Start mainLine id_dev:" + dev.id + "|time:"+start;
         DateTime _start = DateTime.Now;
         COM com = new COM();
         com.SetupString(dev.ip);
@@ -140,13 +140,13 @@ partial class Program
         try
         {
             con.Open();
-            lineStat = lineStat + "|conOpen:" + (DateTime.Now - _start);
+            //lineStat = lineStat + "|conOpen:" + (DateTime.Now - _start);
         }
         catch (Exception Ex)
         {
             Log.log("144 Не могу подключиться к базе данных в потоке mainLine для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start) + ". Завершаю  работу с этим устройством.");
            
-            Log.log("147 \n" + Ex.Message.ToString());
+            Log.log("147 id_dev=" + dev.id + " IP " + dev.ip + "mess " + Ex.Message.ToString());
             return;
 
 
@@ -160,14 +160,14 @@ partial class Program
             }
         //Это происходит на 0,07 сек с начала работы программы.
         //Log.log("177 Установил подключение к базе данных для объекта для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-        lineStat = lineStat + "|checkConnectionStateDB:" + (DateTime.Now - _start);
+        lineStat = lineStat + "|DBConnectOk:" + (DateTime.Now - _start);
 
       
         if (com.ReportStatus())//если связь с контроллером имеется, то продолжаю работу
         {
             //Log.log("129 Есть связь test " + com.ReportStatus()); return;
 
-            lineStat = lineStat + "|checkConnectionStateDevOK:" + (DateTime.Now - _start);
+            lineStat = lineStat + "|DevConnectOk:" + (DateTime.Now - _start);
             
            //начинаю формировать список команд для контроллера для последующей обработки
             DataTable table = DB.GetComandForDevice(con, dev.id, config_log.selct_card);
@@ -175,25 +175,26 @@ partial class Program
 
             lineStat = lineStat + "|GetComandForDevice:" + (DateTime.Now - _start);
             start = DateTime.Now;
-           // Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
-            
-    
-          //формирую лист команд.
-            List<Command> cmds = new List<Command>();
-            foreach (DataRow row in table.Rows)
-            {
-                string comand = ComandBuilder(row);
-                //string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в поток";
-                cmds.Add(new Command(row, comand));
-                //Log.log(log);
-                //надо доабавить в лог ответ
-            }
-            
-            
+            // Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
+
+
+            //формирую лист команд.
+            /*  List<Command> cmds = new List<Command>();
+              foreach (DataRow row in table.Rows)
+              {
+                  string comand = ComandBuilder(row);
+                  //string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в поток";
+                  cmds.Add(new Command(row, comand));
+                  //Log.log(log);
+                  //надо доабавить в лог ответ
+              }
+
+            */
+            lineStat = lineStat + "|startOneDev:" + (DateTime.Now - _start);
             OneDev(con, config_log, dev, com);
-           
+            lineStat = lineStat + "|stopOneDev:" + (DateTime.Now - _start);
 
-
+            /*
                 lineStat = lineStat + "|makeCommandList:" + (DateTime.Now - _start);
 
                 //Thread thread = new Thread(() =>
@@ -209,25 +210,25 @@ partial class Program
                     //con.Close();
                 }
 
- 
-       // Log.log($@"220 Стоп процесса для id_dev={dev.id} ip={dev.ip}. Процесс завершен");
+    */
+            // Log.log($@"220 Стоп процесса для id_dev={dev.id} ip={dev.ip}. Процесс завершен");
 
-            lineStat = lineStat + "|makeComandCicle:" + (DateTime.Now - _start);
+            //lineStat = lineStat + "|makeComandCicle:" + (DateTime.Now - _start);
         }
         else // если нет связи, то увеличиваяю количество попыток с указанием, что нет связи
         {
             //нет связи - это происходит на 2,2 сек после старта программы
-            lineStat = lineStat + "|checkConnectionStateDevNO:" + (DateTime.Now - _start);
+            lineStat = lineStat + "|DevConnectNo:" + (DateTime.Now - _start);
 
 
             //Log.log("213 Нет связи с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
             DB.UpdateIdxCardsNoConnect(con, dev.id); //зафиксировал no connect
             //Log.log("215 Обновил cardIdx not connect id_dev=" + dev.id + " IP " + dev.ip + ",  время выполнения " + (DateTime.Now - start));
-
+            lineStat = lineStat + "|UpdateIdxCardsNoConnect:" + (DateTime.Now - _start);
             DB.UpdateCardInDevIncrements(con, dev.id);//attempt+1
             //Log.log("215 Обновил cardIndev not connect id_dev=" + dev.id + " IP " + dev.ip + "  время выполнения " + (DateTime.Now - start));
 
-            lineStat = lineStat + "|updateDbForDevNoConnect:" + (DateTime.Now - _start);
+            lineStat = lineStat + "|UpdateCardInDevIncrements:" + (DateTime.Now - _start);
 
         }
         con.Close();
@@ -328,7 +329,15 @@ partial class Program
                     }
                     break;
             case 2:
-                DB.DeleteCardInDev(con, row);
+
+                if (anser.Contains("OK"))
+                {
+                    DB.DeleteCardInDev(con, row);
+                } else
+                {
+                    DB.UpdateCardInDevIncrement(con, row);//attempt+1
+
+                }
                 break;
         }
     }
