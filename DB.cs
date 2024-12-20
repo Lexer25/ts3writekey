@@ -172,38 +172,75 @@ where d.id_reader is null", con);
                 table.Load(reader);
                 return true;
         }
+
+
+        /** 20.12.2024 Обновление таблицы cardidx при отсутсвии связи с устройством.
+         * в таблицу записывается дата, время и сообщение, что нет связи с устройством.
+         * Особенность: для ускорения работы необходимо указывать id точек прохода.
+         * 
+         */
         public static bool UpdateIdxCardsNoConnect(FbConnection con, int id)
         {
-            string sql = $@"update cardidx cdx
+            string sql = $@"select d.id_dev from device d
+                join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null
+                where d.id_reader in (0,1)
+                and  d2.id_dev={id}";
+            FbCommand getcomand = new FbCommand(sql, con);
+            var reader = getcomand.ExecuteReader();
+            DataTable table = new DataTable();
+            table.Load(reader);
+
+          
+
+            foreach (DataRow row in table.Rows)
+            {
+                sql = $@"update cardidx cdx
                 set cdx.load_time='now',
                 cdx.load_result='no connect'
                 where  cdx.id_cardindev is not null
-                and cdx.id_dev in (
-                select d.id_dev from device d
-                join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null
-                where d.id_reader in (0,1)
-                and  d2.id_dev={id})";
-            //Log.log("142 UpdateIdxCardsNoConnect " + sql);
-            FbCommand getcomand = new FbCommand(sql, con);
-            var reader = getcomand.ExecuteReader();
-            DataTable table = new DataTable();
-            table.Load(reader);
+                and cdx.id_dev =" + row["id_dev"].ToString();
+
+                //Console.WriteLine("201 "+sql);  
+                //Log.log("142 UpdateIdxCardsNoConnect " + sql);
+                getcomand = new FbCommand(sql, con);
+                 reader = getcomand.ExecuteReader();
+                table = new DataTable();
+                table.Load(reader);
+            }
             return true;
         }
+
+        /** 20.12.2024 Обновление таблицы cardindev при отсутсвии связи с устройством.
+         * выполняется инкремент поля attempt.
+         * Особенность: для ускорения работы необходимо указывать id точек прохода.
+         * 
+         */
+
         public static bool UpdateCardInDevIncrements(FbConnection con, int id)
         {
-            string sql = $@"update cardindev cd
-                set cd.attempts=cd.attempts+1
-                where cd.id_dev in (
-                select d.id_dev from device d
+            string sql = $@"select d.id_dev from device d
                 join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null
                 where d.id_reader in (0,1)
-                and d2.id_dev={id})";
+                and  d2.id_dev={id}";
             FbCommand getcomand = new FbCommand(sql, con);
-            //cdx.id_cardindev=null
             var reader = getcomand.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
+
+
+
+            foreach (DataRow row in table.Rows)
+            {
+
+                sql = $@"update cardindev cd
+                set cd.attempts=cd.attempts+1
+                where cd.id_dev =" + row["id_dev"].ToString();
+                getcomand = new FbCommand(sql, con);
+                //cdx.id_cardindev=null
+                reader = getcomand.ExecuteReader();
+                table = new DataTable();
+                table.Load(reader);
+            }
             return true;
         }
 

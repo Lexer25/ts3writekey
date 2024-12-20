@@ -19,7 +19,7 @@ partial class Program
         DateTime startMain = DateTime.Now;
         Config config_log = JsonSerializer.Deserialize<Config>(File.ReadAllText("conf.json"));
         if (!config_log.log_console) Console.WriteLine("log false in conf.json");
-        Log.log($@"Старт программы TS3");
+        Log.log($@"Старт программы TS3. Версия 4.");
         if (!File.Exists("conf.json"))
         File.AppendAllText("conf.json",@$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
