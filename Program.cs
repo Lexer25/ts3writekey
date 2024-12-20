@@ -69,13 +69,14 @@ partial class Program
                 devs.Add(new DEV(row)); //у этих есть IP адрес, и далее буду работать с ними.
             } else
             {
-               devListNoIP.Add(new DEV(row));//тут собраны контроллеры без IP адреса
+              // devListNoIP.Add(new DEV(row));//тут собраны контроллеры без IP адреса
 
             }
 
         }
 
-        Log.log("72 Нет ip адресов для " + devListNoIP.Count + " контроллеров. А для " +(table.Rows.Count - devListNoIP.Count) + " контроллеров IP адреса имеются.");
+        //Log.log("72 Нет ip адресов для " + devListNoIP.Count + " контроллеров. А для " +(table.Rows.Count - devListNoIP.Count) + " контроллеров IP адреса имеются.");
+        Log.log("72 Есть ip адреса для " + devs.Count + " контроллеров. А для " +(table.Rows.Count - devs.Count) + " контроллеров IP адресов нет.");
 
 
         if (devs.Count == 0)

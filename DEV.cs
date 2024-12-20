@@ -16,7 +16,7 @@ namespace ConsoleApp1
         public List<string> commands;
         public DEV(DataRow row)
         {
-            this.ip =(string) row["netaddr"];
+            if (row["netaddr"].ToString() != "") this.ip =(string) row["netaddr"];
             this.id = (int)row["id_controller"];
             this.controllerName = (string)row["controllerName"];
         }
