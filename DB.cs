@@ -132,7 +132,11 @@ where d.id_reader is null", con);
         }
 
 
-
+        /**20.12.2024 Обновление таблицы cardidx по результатам записи/удаления карты.
+         * при успешной записи/удалении карты фиксируется дата, время, ответ (ОК), id_cardindev ставится null
+         * при неуспешной попытке записи/удалении фиксируется дата, время, ответ (err). id_cardindev остается без изменений, т.к. попытки записи будут продолжаться.
+         * 
+         */
         public static bool UpdateIdxCard(FbConnection con, DataRow row,string result,bool s_e)
         {
             string id_cardindev = "";
@@ -196,7 +200,7 @@ where d.id_reader is null", con);
             {
                 sql = $@"update cardidx cdx
                 set cdx.load_time='now',
-                cdx.load_result='no connect'
+                cdx.load_result='Device not answer.'
                 where  cdx.id_cardindev is not null
                 and cdx.id_dev =" + row["id_dev"].ToString();
 

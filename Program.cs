@@ -127,16 +127,13 @@ partial class Program
     //остновной цикл обработки очереди 16.12.2024
     public static void mainLine(Config config_log, DEV dev)
     {
-        //Log.log("168 Старт потока для id_dev=" + dev.id + " IP " + dev.ip);
-       // string lineStat = "Start id_dev:" + dev.id;
+       
         DateTime start = DateTime.Now;
         string lineStat = "132 Start mainLine id_dev:" + dev.id + "|time:"+start;
         DateTime _start = DateTime.Now;
         COM com = new COM();
         com.SetupString(dev.ip);
-        //время созадания экземпляра класса примерно 50-60 мс
-        //Log.log("172 Создал экземпляр объекта для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-        
+          
         FbConnection con = DB.Connect(config_log.db_config);
         try
         {
@@ -159,20 +156,16 @@ partial class Program
                 Console.WriteLine("179 no connect db " + config_log.db_config + ". Завершаю поток для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
                 return;
             }
-        //Это происходит на 0,07 сек с начала работы программы.
-        //Log.log("177 Установил подключение к базе данных для объекта для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-        lineStat = lineStat + "|DBConnectOk:" + (DateTime.Now - _start);
+          lineStat = lineStat + "|DBConnectOk:" + (DateTime.Now - _start);
 
       
         if (com.ReportStatus())//если связь с контроллером имеется, то продолжаю работу
         {
-            //Log.log("129 Есть связь test " + com.ReportStatus()); return;
-
             lineStat = lineStat + "|DevConnectOk:" + (DateTime.Now - _start);
             
            //начинаю формировать список команд для контроллера для последующей обработки
             DataTable table = DB.GetComandForDevice(con, dev.id, config_log.selct_card);
-            //Console.WriteLine(@$"183 sql GetComandForDevice {DateTime.Now - start}");
+            
 
             lineStat = lineStat + "|GetComandForDevice:" + (DateTime.Now - _start);
             start = DateTime.Now;
@@ -192,52 +185,33 @@ partial class Program
 
             */
             lineStat = lineStat + "|startOneDev:" + (DateTime.Now - _start);
+            
+            // выполнение команд для указанного контролллера.
             OneDev(con, config_log, dev, com);
+            
             lineStat = lineStat + "|stopOneDev:" + (DateTime.Now - _start);
 
-            /*
-                lineStat = lineStat + "|makeCommandList:" + (DateTime.Now - _start);
-
-                //Thread thread = new Thread(() =>
-                //{
-                //реализация команд из списка в цикле
-
-                foreach (Command cmd in cmds)
-
-                {
-                    DB.UpdateIdxCardsNoConnect(con, dev.id);
-                    DB.UpdateCardInDevIncrements(con, dev.id);
-                    //Log.log("215 " + dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect);
-                    //con.Close();
-                }
-
-    */
-            // Log.log($@"220 Стоп процесса для id_dev={dev.id} ip={dev.ip}. Процесс завершен");
-
-            //lineStat = lineStat + "|makeComandCicle:" + (DateTime.Now - _start);
+           
         }
         else // если нет связи, то увеличиваяю количество попыток с указанием, что нет связи
         {
             //нет связи - это происходит на 2,2 сек после старта программы
-            lineStat = lineStat + "|DevConnectNo:" + (DateTime.Now - _start);
+                lineStat = lineStat + "|DevConnectNo:" + (DateTime.Now - _start);
 
 
-            //Log.log("213 Нет связи с id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
             DB.UpdateIdxCardsNoConnect(con, dev.id); //зафиксировал no connect
-            //Log.log("215 Обновил cardIdx not connect id_dev=" + dev.id + " IP " + dev.ip + ",  время выполнения " + (DateTime.Now - start));
-            lineStat = lineStat + "|UpdateIdxCardsNoConnect:" + (DateTime.Now - _start);
+            
+                lineStat = lineStat + "|UpdateIdxCardsNoConnect:" + (DateTime.Now - _start);
             DB.UpdateCardInDevIncrements(con, dev.id);//attempt+1
-            //Log.log("215 Обновил cardIndev not connect id_dev=" + dev.id + " IP " + dev.ip + "  время выполнения " + (DateTime.Now - start));
-
-            lineStat = lineStat + "|UpdateCardInDevIncrements:" + (DateTime.Now - _start);
+            
+                lineStat = lineStat + "|UpdateCardInDevIncrements:" + (DateTime.Now - _start);
 
         }
-        con.Close();
-        lineStat = lineStat + "|conClose:" + (DateTime.Now - _start);
-        //Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
-        Log.log("223  " + lineStat + "|Stio_Time_execite:" + (DateTime.Now - start));
-        //Log.log("224 Стоп потока для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start));
-
+        con.Close();//закрыл подключение к БД СКУД
+            lineStat = lineStat + "|conClose:" + (DateTime.Now - _start);
+        
+        Log.log("223  " + lineStat + "|Time_execite:" + (DateTime.Now - start));
+        
     }
     public static void GetDev(DEV dev)
     {
@@ -266,38 +240,37 @@ partial class Program
      */
     private static void OneDev(FbConnection con,Config log_config,DEV dev, COM com) 
     {
-        //беру список карт для точек прохода указанного контроллера
+       
         DateTime start = DateTime.Now;
-        //if (con.State == ConnectionState.Open) return;
-   
+        
+        //беру список карт для точек прохода указанного контроллера
         DataTable table = DB.GetComandForDevice(con, dev.id, log_config.selct_card);
-        Console.WriteLine(@$"281 sql GetComandForDevice_{DateTime.Now - start}");
+            Console.WriteLine(@$"281 sql GetComandForDevice_{DateTime.Now - start}");
+            Log.log(@$"281 sql GetComandForDevice id_dev= {dev.id} time_exec:{DateTime.Now - start}");
         start = DateTime.Now;
        
-        //Log.log("201 "+dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | " + dev.connect + " | count " + table.Rows.Count);
         List<Command> cmds = new List<Command>();
         foreach (DataRow row in table.Rows)
         {
             string comand = ComandBuilder(row);
             //string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
             cmds.Add(new Command(row, comand));
-            //Log.log(log);
-            //надо добавить в лог ответ
+            
         }
         
 
             foreach (Command cmd in cmds)
             {
-                string anser = com.ComandExclude(cmd.command);
-                AfterComand(anser, con, cmd.dataRow);
+                string anser = com.ComandExclude(cmd.command);//выполнил команду
+                AfterComand(anser, con, cmd.dataRow);//зафиксировал результат в базе данных
                 string log = $@"288 {dev.id}  | {cmd.dataRow["id_reader"]} | {dev.ip} | {cmd.command} > {anser}";
-                Log.log(log);
+                Log.log(log);//зафиксировал результат в лог-файле
             }
            // con.Close();
  
         
-        Console.WriteLine("thread_start");
-        Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
+        //Console.WriteLine("thread_start");
+        //Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
     }
     private static string ComandBuilder(DataRow? row)
     {
@@ -317,19 +290,19 @@ partial class Program
     {
         switch ((int)row["operation"])
         {
-            case 1:
+            case 1://1 - добавление карты в контроллер.
                     if (anser.Contains("OK"))
                     {
                         DB.UpdateIdxCard(con, row, anser, true);//заполнить load_result, load_time, id_card_in_dev=null
-                        DB.DeleteCardInDev(con, row);//удалить строку
+                        DB.DeleteCardInDev(con, row);//удалить строку из cardindev
                     }
                     else
                     {
                         DB.UpdateIdxCard(con, row, anser, false);
-                        DB.UpdateCardInDevIncrement(con, row);//attempt+1
+                        DB.UpdateCardInDevIncrement(con, row);//attempt+1 cardindev
                     }
                     break;
-            case 2:
+            case 2://удаление карты из контроллера
 
                 if (anser.Contains("OK"))
                 {
