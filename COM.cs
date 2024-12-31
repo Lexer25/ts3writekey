@@ -38,7 +38,7 @@ namespace ConsoleApp1
         
         public string ComandExclude(string comand)
         {
-            commands.Add(comand);
+            //commands.Add(comand);
             return a.Execute(comand);
         }
         

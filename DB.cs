@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ConsoleApp1
@@ -58,29 +59,22 @@ namespace ConsoleApp1
         public static DataTable GetDevice(FbConnection con, string procdb)
         {
             List<DEV> devs = new List<DEV>();
-            /*
-            FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr from {procdb} 
-                    cg join device d on d.id_dev=cg.id_dev 
-                    join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null", con);
-            */
 
-            
-/*
-            FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr
-     from CardInDev c
-     join Device d  on (c.id_dev=d.id_dev) and (c.id_db=d.id_db)
-    left join card cc on cc.id_card=c.id_card
-    join device d2 on d2.id_ctrl=d.id_ctrl and (d2.id_devtype in (1,2, 4, 6)) and d2.id_reader is null
-    where (c.id_db=1) and ( 0 <> (select IS_ACTIVE from DEVICE_CHECKACTIVE(d.id_dev)) )", con);
-*/
- FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr
+            Config config_log = JsonSerializer.Deserialize<Config>(File.ReadAllText("c:\\ts4\\conf.json"));
+
+            string sql = @$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr
      from CardInDev c
      join Device d  on (c.id_dev=d.id_dev) and (c.id_db=d.id_db)
     left join card cc on cc.id_card=c.id_card
     join device d2 on d2.id_ctrl=d.id_ctrl and (d2.id_devtype in (1,2, 4, 6)) and d2.id_reader is null
     where (c.id_db=1)
-    and ( 0 <> (select IS_ACTIVE from DEVICE_CHECKACTIVE(d.id_dev)) )
-    and d2.id_dev not in (545, 548, 581, 587, 590, 565, 566)", con);
+    and ( 0 <> (select IS_ACTIVE from DEVICE_CHECKACTIVE(d.id_dev)) )";
+
+            if (config_log.stopList != null) sql = sql + " and d2.id_dev not in " + config_log.stopList;
+
+            Log.log($@"75 " + sql);
+
+            FbCommand getip = new FbCommand(sql, con);
 
 
 

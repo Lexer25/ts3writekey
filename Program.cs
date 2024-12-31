@@ -14,8 +14,21 @@ partial class Program
     static List<DEV> devListNoIP = new List<DEV>();//список контроллеров, для которых не указан IP адрес.
     static void Main(string[] args)
     {
-       
-        
+
+      /*  
+        COM com = new COM();
+        com.SetupString("10.25.16.205");
+        string command;
+        //Console.WriteLine("23 " + com.getVersion);
+        command = "reportstatus";
+        command = "getDeviceTime";
+        command = "writekey door=0, key=\"00203623\", TZ=1, status=0";
+
+        string answer = com.ComandExclude(command);//выполнил команду
+        Console.WriteLine("22 " +command +" answer:" + answer);
+        return;
+      */
+
         DateTime startMain = DateTime.Now;
 
         //var path = Path.Combine(Directory.GetCurrentDirectory(), "conf.json");
@@ -23,7 +36,7 @@ partial class Program
        
 
        // if (!config_log.log_console) Console.WriteLine("log false in conf.json");
-        Log.log($@"Старт программы TS3. Версия 4.3");
+        Log.log($@"Старт программы TS3. Версия 4.4");
         if (!File.Exists("c:\\ts4\\conf.json")) { 
         File.AppendAllText("c:\\ts4\\conf.json", @$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
@@ -33,6 +46,8 @@ partial class Program
         Config config_log = JsonSerializer.Deserialize<Config>(File.ReadAllText("c:\\ts4\\conf.json"));
 
         Log.log($@"26 Подключение к базе данных {config_log.db_config}");
+
+        Console.WriteLine(config_log.stopList);
 
         FbConnection con = DB.Connect(config_log.db_config);
         try
@@ -136,7 +151,7 @@ partial class Program
     {
        
         DateTime start = DateTime.Now;
-        string lineStat = "132 Start mainLine id_dev:" + dev.id + "|time:"+start;
+        string lineStat = "132 Start mainLine id_dev:" + dev.id + "|IP:" + dev.ip+ "|time:"+start;
         DateTime _start = DateTime.Now;
         COM com = new COM();
         com.SetupString(dev.ip);
@@ -268,7 +283,8 @@ partial class Program
 
             foreach (Command cmd in cmds)
             {
-                string anser = com.ComandExclude(cmd.command);//выполнил команду
+            string anser = ""; 
+                anser = com.ComandExclude(cmd.command);//выполнил команду
                 AfterComand(anser, con, cmd.dataRow);//зафиксировал результат в базе данных
                 string log = $@"288 {dev.id}  | {cmd.dataRow["id_reader"]} | {dev.ip} | {cmd.command} > {anser}";
                 Log.log(log);//зафиксировал результат в лог-файле
@@ -295,6 +311,8 @@ partial class Program
     }
     private static void AfterComand(string anser, FbConnection con, DataRow? row)
     {
+        string log = $@"300 {anser}";
+        Log.log(log);//зафиксировал результат в лог-файле
         switch ((int)row["operation"])
         {
             case 1://1 - добавление карты в контроллер.
