@@ -14,7 +14,7 @@ namespace ConsoleApp1
             lock (locker)
             {
                 Console.WriteLine(log);
-                StreamWriter SW = File.AppendText(@"log.txt");
+                StreamWriter SW = File.AppendText(@"c:\ts4\log.txt");
                 SW.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " " + log + Environment.NewLine);
                 SW.Close();
             }
