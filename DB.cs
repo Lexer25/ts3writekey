@@ -64,12 +64,25 @@ namespace ConsoleApp1
                     join device d2 on d2.id_ctrl=d.id_ctrl and d2.id_reader is null", con);
             */
 
+            
+/*
             FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr
      from CardInDev c
      join Device d  on (c.id_dev=d.id_dev) and (c.id_db=d.id_db)
     left join card cc on cc.id_card=c.id_card
     join device d2 on d2.id_ctrl=d.id_ctrl and (d2.id_devtype in (1,2, 4, 6)) and d2.id_reader is null
     where (c.id_db=1) and ( 0 <> (select IS_ACTIVE from DEVICE_CHECKACTIVE(d.id_dev)) )", con);
+*/
+ FbCommand getip = new FbCommand(@$"select distinct d2.id_dev as id_controller, d2.name as controllerName, d2.netaddr
+     from CardInDev c
+     join Device d  on (c.id_dev=d.id_dev) and (c.id_db=d.id_db)
+    left join card cc on cc.id_card=c.id_card
+    join device d2 on d2.id_ctrl=d.id_ctrl and (d2.id_devtype in (1,2, 4, 6)) and d2.id_reader is null
+    where (c.id_db=1)
+    and ( 0 <> (select IS_ACTIVE from DEVICE_CHECKACTIVE(d.id_dev)) )
+    and d2.id_dev not in (545, 548, 581, 587, 590, 565, 566)", con);
+
+
 
 
 
