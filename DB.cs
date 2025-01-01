@@ -43,7 +43,7 @@ namespace ConsoleApp1
          * 
          * 
          */
-        public static DataTable cardInDevGetList(FbConnection con, string procd)
+        public static DataTable cardInDevGetList(FbConnection con)
         {
             //string sql = @$"select * from {procd}";
             string sql = @$"select * from cardindev";
@@ -56,7 +56,7 @@ namespace ConsoleApp1
         /** Список контроллеров, куда надо будет загружать карты
          * 
          */
-        public static DataTable GetDevice(FbConnection con, string procdb)
+        public static DataTable GetDevice(FbConnection con)
         {
             List<DEV> devs = new List<DEV>();
 
@@ -72,7 +72,14 @@ namespace ConsoleApp1
 
             if (config_log.stopList != null) sql = sql + " and d2.id_dev not in " + config_log.stopList;
 
+
+            if (config_log.SqlGetDevice != null) sql = config_log.SqlGetDevice;// если в файле конфигурации указан SQL запрос, то использовать его
+
+
             Log.log($@"75 " + sql);
+
+
+
 
             FbCommand getip = new FbCommand(sql, con);
 
@@ -125,7 +132,7 @@ where d.id_reader is null", con);
         /**Получаю список команд загрузки для указанного контроллера.
          * input id - контроллер!!!
          */
-        public static DataTable GetComandForDevice(FbConnection con, int id, string procdb)
+        public static DataTable GetComandForDevice(FbConnection con, int id)
         {
             string sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1, {id}) cg
              order by cg.id_cardindev";

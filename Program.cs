@@ -36,7 +36,7 @@ partial class Program
        
 
        // if (!config_log.log_console) Console.WriteLine("log false in conf.json");
-        Log.log($@"Старт программы TS3. Версия 4.4");
+        Log.log($@"Старт программы TS3. Версия 4.6");
         if (!File.Exists("c:\\ts4\\conf.json")) { 
         File.AppendAllText("c:\\ts4\\conf.json", @$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
@@ -79,8 +79,8 @@ partial class Program
         //Получаю список контроллеров, для которых есть очередь.
       
 
-        DataTable table = DB.GetDevice(con, config_log.selct_card);
-        Log.log("55 Имеется " + DB.cardInDevGetList(con, config_log.selct_card).Rows.Count + " записей в очереди для  " + table.Rows.Count + " контроллеров. Время выполнения " + (DateTime.Now- startMain));
+        DataTable table = DB.GetDevice(con);
+        Log.log("55 Имеется " + DB.cardInDevGetList(con).Rows.Count + " записей в очереди для  " + table.Rows.Count + " контроллеров. Время выполнения " + (DateTime.Now- startMain));
        
         
         //теперь проверяю настройки: разделяю список на тех, у кого есть IP адрес. и у кого нет IP адреса.
@@ -186,7 +186,7 @@ partial class Program
             lineStat = lineStat + "|DevConnectOk:" + (DateTime.Now - _start);
             
            //начинаю формировать список команд для контроллера для последующей обработки
-            DataTable table = DB.GetComandForDevice(con, dev.id, config_log.selct_card);
+            DataTable table = DB.GetComandForDevice(con, dev.id);
             
 
             lineStat = lineStat + "|GetComandForDevice:" + (DateTime.Now - _start);
@@ -266,7 +266,7 @@ partial class Program
         DateTime start = DateTime.Now;
         
         //беру список карт для точек прохода указанного контроллера
-        DataTable table = DB.GetComandForDevice(con, dev.id, log_config.selct_card);
+        DataTable table = DB.GetComandForDevice(con, dev.id);
             Console.WriteLine(@$"281 sql GetComandForDevice_{DateTime.Now - start}");
             Log.log(@$"281 sql GetComandForDevice id_dev= {dev.id} time_exec:{DateTime.Now - start}");
         start = DateTime.Now;
