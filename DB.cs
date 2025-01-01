@@ -110,25 +110,6 @@ where d.id_reader is null", con);
 
 
 
-
-
-        /**Получаю список команд загрузки для указанной точки прохода.
-         * input id - точка прохода!!!
-         */
-        public static DataTable GetDor(FbConnection con, int id, string procdb)
-        {
-            string  sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1) cg
-             order by cg.id_cardindev";
-            
-            FbCommand getcomand = new FbCommand(sql, con);
- 
-            var reader = getcomand.ExecuteReader();
-            DataTable table = new DataTable();
-            table.Load(reader);
-           return table;
-        }
-
-
         /**Получаю список команд загрузки для указанного контроллера.
          * input id - контроллер!!!
          */
@@ -136,6 +117,8 @@ where d.id_reader is null", con);
         {
             string sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1, {id}) cg
              order by cg.id_cardindev";
+
+            Log.log($@"121 " + sql);
 
             FbCommand getcomand = new FbCommand(sql, con);
 
