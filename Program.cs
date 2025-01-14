@@ -36,7 +36,7 @@ partial class Program
        
 
        // if (!config_log.log_console) Console.WriteLine("log false in conf.json");
-        Log.log($@"Старт программы TS3. Версия 4.7");
+        Log.log($@"Старт программы TS3. Версия 4.8");
         if (!File.Exists("c:\\ts4\\conf.json")) { 
         File.AppendAllText("c:\\ts4\\conf.json", @$"{{
   ""db_config"": ""User = SYSDBA; Password = temp; Database =  C:\\Program Files (x86)\\Cardsoft\\DuoSE\\Access\\ShieldPro_rest.GDB; DataSource = 127.0.0.1; Port = 3050; Dialect = 3; Charset = win1251; Role =;Connection lifetime = 15; Pooling = true; MinPoolSize = 0; MaxPoolSize = 50; Packet Size = 8192; ServerType = 0;"",
@@ -88,7 +88,16 @@ partial class Program
         {
             if (row["netaddr"].ToString() != "")
             {
-                devs.Add(new DEV(row)); //у этих есть IP адрес, и далее буду работать с ними.
+                DEV newdev = new DEV(row);
+                foreach(DEV dev in devs)
+                    if(dev.ip == newdev.ip)
+                    {
+                        Log.log("95 Повторяются адреса " + newdev.ip + "  для  ID_DEV = " + newdev.id + " и " + dev.id + ". id_dev="+newdev.id + " обрабатываться не будет.");
+                        newdev = null;
+                    }
+                if(!(newdev is null)) devs.Add(newdev);// is null теперь работает
+                //у этих есть IP адрес, и далее буду работать с ними.
+
             } else
             {
               // devListNoIP.Add(new DEV(row));//тут собраны контроллеры без IP адреса
