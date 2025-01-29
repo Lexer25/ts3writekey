@@ -1,0 +1,2 @@
+C:\Program Files (x86)\Ts3\WorkerService1.pdb
+C:\Program Files (x86)\Ts3\WorkerService1.exe

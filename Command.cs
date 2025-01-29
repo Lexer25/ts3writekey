@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleApp1
+namespace WorkerService1
 {
     internal class Command
     {
-        public Command(DataRow dataRow, string command) 
+        public Command(DataRow dataRow, string command)
         {
             this.dataRow = dataRow;
             this.command = command;

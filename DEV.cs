@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleApp1
+namespace WorkerService1
 {
     class DEV
     {
@@ -16,10 +16,10 @@ namespace ConsoleApp1
         public List<string> commands;
         public DEV(DataRow row)
         {
-            this.ip =(string) row["netaddr"];
+            this.ip = (string)row["netaddr"];
             this.id = (int)row["id_controller"];
             this.controllerName = (string)row["controllerName"];
         }
-       
+
     }
 }
