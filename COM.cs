@@ -9,6 +9,8 @@ namespace WorkerService1
     public class COM
     {
         dynamic a;
+
+        public bool isTest=true;
         
         public COM()
         {
@@ -35,18 +37,28 @@ namespace WorkerService1
         */
         public string ComandExclude(string comand)
         {
-            //commands.Add(comand);//30.01.2025 вот это непонятно зачем. Надо проверить и убрать, если не нужен.
-            return a.Execute(comand);
+          
+                //commands.Add(comand);//30.01.2025 вот это непонятно зачем. Надо проверить и убрать, если не нужен.
+                return a.Execute(comand);
+            
         }
 
         public string ComandExecute(string comand)
         {
-            //commands.Add(comand);//30.01.2025 вот это непонятно зачем. Надо проверить и убрать, если не нужен.
-            return a.Execute(comand);
+            if (isTest)
+            {
+                return "Ok";
+            }
+            else
+            {
+                //commands.Add(comand);//30.01.2025 вот это непонятно зачем. Надо проверить и убрать, если не нужен.
+                return a.Execute(comand);
+
+            }
         }
 
 
-        public bool ReportStatus()
+            public bool ReportStatus()
         {
             return ((string)a.Execute($@"ReportStatus")).Split('=')[1] == "Yes";
         }
