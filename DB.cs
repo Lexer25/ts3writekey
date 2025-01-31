@@ -74,7 +74,7 @@ namespace WorkerService1
             if (CardWrite.cardWriteConfig.SqlGetDevice != null) sql = CardWrite.cardWriteConfig.SqlGetDevice;// если в файле конфигурации указан SQL запрос, то использовать его
 
 
-            _logger.LogDebug($@"75 " + sql);
+            //_logger.LogDebug($@"75 " + sql);
             FbCommand getip = new FbCommand(sql, con);
             var reader = getip.ExecuteReader();
             DataTable table = new DataTable();

@@ -20,10 +20,11 @@ namespace WorkerService1
         {
             _logger = logger;
             db_config = options.db_config;
+
             cardWriteConfig = options.CardWriteConfig;
             var time = options.CardWriteConfig.timeout.Split(':');
             timeout = new TimeSpan(Int32.Parse(time[0]), Int32.Parse(time[1]), Int32.Parse(time[2]));
-            time = options.CardWriteConfig.timeout.Split(':');
+            time = options.CardWriteConfig.timestart.Split(':');
             timestart = new TimeSpan(Int32.Parse(time[0]), Int32.Parse(time[1]), Int32.Parse(time[2]));
             var now = new TimeSpan(DateTime.Now.TimeOfDay.Hours, DateTime.Now.TimeOfDay.Minutes, DateTime.Now.TimeOfDay.Seconds);
             deltasleep = (options.CardWriteConfig.run_now) ? TimeSpan.Zero :
@@ -46,7 +47,7 @@ namespace WorkerService1
                 devListNoIP = new List<DEV>();
                 _logger.LogTrace($@"Старт итерации");
                 run(_logger, db_config);
-                _logger.LogTrace($@"timeout worker1: {timeout}");
+                _logger.LogTrace($@"50 timeout worker1: {timeout}");
                 await Task.Delay(timeout);
             }
         }
@@ -59,30 +60,7 @@ namespace WorkerService1
         static List<DEV> devListNoIP = new List<DEV>();//список контроллеров, для которых не указан IP адрес.
         private static void run(ILogger _logger, string db_config)
         {
-            /*  
-     COM com = new COM();
-     com.SetupString("10.25.16.205");
-     string command;
-     //Console.WriteLine("23 " + com.getVersion);
-     command = "reportstatus";
-     command = "getDeviceTime";
-     command = "writekey door=0, key=\"00203623\", TZ=1, status=0";
-
-     string answer = com.ComandExclude(command);//выполнил команду
-     Console.WriteLine("22 " +command +" answer:" + answer);
-     return;
-   */
-
-
-
-            //var path = Path.Combine(Directory.GetCurrentDirectory(), "conf.json");
-            //Config config_log = JsonSerializer.Deserialize<Config>(File.ReadAllText(path));
-
-
-            // if (!config_log.log_console) Console.WriteLine("log false in conf.json");
-
-
-            _logger.LogTrace($@"26 Подключение к базе данных {db_config}");
+           _logger.LogTrace($@"26 Подключение к базе данных {db_config}");
 
             Console.WriteLine(cardWriteConfig.stopList);
 
@@ -168,19 +146,18 @@ namespace WorkerService1
             List<Thread> threads = new List<Thread>();
             foreach (DEV dev in devs)
             {
-                MainLine(dev,_logger, db_config);
+                //MainLine(dev,_logger, db_config);
                 // Thread thread = new Thread(() => GetVersion(dev));
-                // Thread thread = new Thread(() => mainLine(config_log, dev));
-                //threads.Add(thread);
-                // thread.Start();
+                Thread thread = new Thread(() => MainLine(dev, _logger, db_config));
+                threads.Add(thread);
+                thread.Start();
             }
             //ждем завершение всех потоков.
             foreach (Thread thread in threads)
             {
                 thread.Join();
             }
-            //  223  132 Start mainLine id_dev: 10 | IP:192.168.8.10 | time:14.01.2025 12:36:51 | DBConnectOk:00:00:00.1343070 | DevConnectNo:00:00:02.1627000 | UpdateIdxCardsNoConnect:00:00:02.1627018 | UpdateCardInDevIncrements:00:00:02.1627020 | conClose:00:00:02.1634080 | Time_execite:00:00:02.1635669                                                                                       223  132 Start mainLine id_dev: 7 | IP:192.168.8.7 | time:14.01.2025 12:36:51 | DBConnectOk:00:00:00.1343071 | DevConnectNo:00:00:02.1628451 | UpdateIdxCardsNoConnect:00:00:02.1628464 | UpdateCardInDevIncrements:00:00:02.1628468 | conClose:00:00:02.1634942 | Time_execite:00:00:02.1636581                                                                                         thread_end
-            //223  132 Start mainLine id_dev:7|IP:192.168.8.7|time:14.01.2025 12:37:28|DBConnectOk:00:00:00.0885455|DevConnectNo:00:00:02.1158628|UpdateIdxCardsNoConnect:00:00:02.1158650|UpdateCardInDevIncrements:00:00:02.1158652|conClose:00:00:02.1166158|Time_execite:00:00:02.1167255                                                                                         223  132 Start mainLine id_dev:10|IP:192.168.8.10|time:14.01.2025 12:37:30|DBConnectOk:00:00:00.0002577|DevConnectNo:00:00:02.0020725|UpdateIdxCardsNoConnect:00:00:02.0020758|UpdateCardInDevIncrements:00:00:02.0020762|conClose:00:00:02.0021264|Time_execite:00:00:02.0021378                                                                                       thread_end    
+            
             //ждем завершение всех потоков.
             foreach (Thread thread in threads)
             {
@@ -195,10 +172,11 @@ namespace WorkerService1
         static void MainLine(DEV dev, ILogger _logger,string db_config)
         {
             DateTime start = DateTime.Now;
-            string lineStat = "132 Start mainLine id_dev:" + dev.id + "|IP:" + dev.ip + "|time:" + start;
+            string lineStat = "132 Start thread id_dev:" + dev.id + "|IP:" + dev.ip;
             DateTime _start = DateTime.Now;
-            COM com = new COM();
-            com.SetupString(dev.ip);
+           
+            
+            //создаю подключение к базе данных. Оно потребуется даже если нет связи с контроллером.
             FbConnection con = DB.Connect(db_config, _logger);
             try
             {
@@ -216,81 +194,52 @@ namespace WorkerService1
                 Console.WriteLine("179 no connect db " + db_config + ". Завершаю поток для id_dev=" + dev.id + " IP " + dev.ip + " время выполнения " + (DateTime.Now - start), LogLevel.Error);
                 return;
             }
-            lineStat += "|DBConnectOk:" + (DateTime.Now - _start);
+            //lineStat += "|DBConnectOk:" + (DateTime.Now - _start);
+
+            //создаю экземпляр контроллера
+            COM com = new COM();
+            com.SetupString(dev.ip);
             if (com.ReportStatus())//если связь с контроллером имеется, то продолжаю работу
             {
-                lineStat += "|DevConnectOk:" + (DateTime.Now - _start);
+                //lineStat += "|DevConnectOk:" + (DateTime.Now - _start);
 
                 //начинаю формировать список команд для контроллера для последующей обработки
-                DataTable table = DB.GetComandForDevice(con, dev.id);
+                //DataTable table = DB.GetComandForDevice(con, dev.id);
 
 
-                lineStat += "|GetComandForDevice:" + (DateTime.Now - _start);
+                //lineStat += "|GetComandForDevice:" + (DateTime.Now - _start);
                 start = DateTime.Now;
-                // Log.log("136 "+ dev.id + " | " + dev.id + " | " + dev.controllerName + " | " + dev.ip + " | reportStatus OK | count " + table.Rows.Count);
-
-
-                //формирую лист команд.
-                /*  List<Command> cmds = new List<Command>();
-                  foreach (DataRow row in table.Rows)
-                  {
-                      string comand = ComandBuilder(row);
-                      //string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в поток";
-                      cmds.Add(new Command(row, comand));
-                      //Log.log(log);
-                      //надо доабавить в лог ответ
-                  }
-
-                */
-                lineStat += "|startOneDev:" + (DateTime.Now - _start);
+               
+                //lineStat += "|startOneDev:" + (DateTime.Now - _start);
 
                 // выполнение команд для указанного контролллера.
                 OneDev(con, _logger,dev, com);
 
-                lineStat += "|stopOneDev:" + (DateTime.Now - _start);
+                //lineStat += "|stopOneDev:" + (DateTime.Now - _start);
 
 
             }
             else // если нет связи, то увеличиваяю количество попыток с указанием, что нет связи
             {
                 //нет связи - это происходит на 2,2 сек после старта программы
-                lineStat += "|DevConnectNo:" + (DateTime.Now - _start);
+                //lineStat += "|DevConnectNo:" + (DateTime.Now - _start);
+                lineStat += "|DevConnectNo:" ;
 
 
                 //  DB.UpdateIdxCardsNoConnect(con, dev.id); //зафиксировал no connect
 
-                lineStat += "|UpdateIdxCardsNoConnect:" + (DateTime.Now - _start);
+                //lineStat += "|UpdateIdxCardsNoConnect:" + (DateTime.Now - _start);
                 //  DB.UpdateCardInDevIncrements(con, dev.id);//attempt+1
 
-                lineStat += "|UpdateCardInDevIncrements:" + (DateTime.Now - _start);
+                //lineStat += "|UpdateCardInDevIncrements:" + (DateTime.Now - _start);
 
             }
             con.Close();//закрыл подключение к БД СКУД
-            lineStat += "|conClose:" + (DateTime.Now - _start);
+            //lineStat += "|conClose:" + (DateTime.Now - _start);
 
             _logger.LogDebug("223  " + lineStat + "|Time_execite:" + (DateTime.Now - start));
         }
-        /*
-   public static void GetDev(DEV dev)
-   {
-       COM com = new COM();
-       com.SetupString(dev.ip);
-       dev.connect = com.ReportStatus();
-       //dev.connect = true;
-
-
-   }
-
-
-
-   public static void GetVersion(DEV dev)
-   {
-       COM device = new COM();
-       device.SetupString(dev.ip);
-       string version = device.ComandExclude("getversion");
-       Console.WriteLine(version);
-
-   }
+       
 
    /**
     * работа с указанным контроллером: выборка списка команда, их запись и фиксация результата.
@@ -308,30 +257,33 @@ namespace WorkerService1
             _logger.LogDebug(@$"281 sql GetComandForDevice id_dev= {dev.id} time_exec:{DateTime.Now - start}");
             start = DateTime.Now;
 
+            //собираю команды в один список cmds
             List<Command> cmds = new List<Command>();
             foreach (DataRow row in table.Rows)
             {
                 string comand = ComandBuilder(row);
-                //string log = $@"{dev.id}  | {row["id_reader"]} | {dev.ip} | {comand} > добавить операцию в список команд.";
+                
                 cmds.Add(new Command(row, comand));
 
             }
 
-
+            //а теперь обрабаываю список команд cmds
             foreach (Command cmd in cmds)
             {
-                string anser = "";
-                anser = com.ComandExclude(cmd.command);//выполнил команду
-                AfterComand(anser, con, cmd.dataRow,_logger);//зафиксировал результат в базе данных
-                string log = $@"288 {dev.id}  | {cmd.dataRow["id_reader"]} | {dev.ip} | {cmd.command} > {anser}";
+                string answer = "";
+               // anser = com.ComandExclude(cmd.command);//выполнил команду
+                answer = com.ComandExecute(cmd.command);//выполнил команду
+                AfterComand(answer, con, cmd.dataRow,_logger);//зафиксировал результат в базе данных
+                string log = $@"288 {dev.id}  | {cmd.dataRow["id_reader"]} | {dev.ip} | {cmd.command} > {answer}";
                 _logger.LogTrace(log);//зафиксировал результат в лог-файле
             }
-            // con.Close();
-
-
-            //Console.WriteLine("thread_start");
-            //Console.WriteLine(@$"sql_con_{DateTime.Now - start}");
+          
         }
+
+        /**формирую тектовую команду
+         * @input строка из базы данных
+         * @output текстовая строка - команда для драйвера Artonit2.dll
+         */
         private static string ComandBuilder(DataRow? row)
         {
             string command = "";
