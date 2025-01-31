@@ -10,7 +10,7 @@ namespace WorkerService1
     {
         dynamic a;
 
-        public bool isTest=true;
+        public bool isTest=false;
         
         public COM()
         {
@@ -60,7 +60,14 @@ namespace WorkerService1
 
             public bool ReportStatus()
         {
-            return ((string)a.Execute($@"ReportStatus")).Split('=')[1] == "Yes";
+            if (isTest)
+            {
+                return true;
+            }
+            else
+            {
+                return ((string)a.Execute($@"ReportStatus")).Split('=')[1] == "Yes";
+            }
         }
     }
 }

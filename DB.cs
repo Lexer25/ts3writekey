@@ -97,7 +97,7 @@ namespace WorkerService1
             string sql = $@"select distinct  cg.id_dev, cg.id_reader, cg.id_card, cg.timezones, cg.operation, cg.id_cardindev from cardindev_ts3(1, {id}) cg
              order by cg.id_cardindev";
 
-            _logger.LogDebug($@"121 " + sql);
+            //_logger.LogDebug($@"121 " + sql);
 
             FbCommand getcomand = new FbCommand(sql, con);
 

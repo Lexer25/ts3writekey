@@ -33,7 +33,7 @@ namespace WorkerService1
 
         public override Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.LogTrace("start");
+            _logger.LogTrace("36 Start CardWrite.");
             return base.StartAsync(cancellationToken);
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,9 +45,9 @@ namespace WorkerService1
             {
                 devs = new List<DEV>();
                 devListNoIP = new List<DEV>();
-                _logger.LogTrace($@"Старт итерации");
-                run(_logger, db_config);
-                _logger.LogTrace($@"50 timeout worker1: {timeout}");
+                _logger.LogTrace($@"48 Старт итерации");
+                      run(_logger, db_config);//запуск логического процесса.
+                _logger.LogTrace($@"50 Стоп итерации");
                 await Task.Delay(timeout);
             }
         }
@@ -99,6 +99,8 @@ namespace WorkerService1
             con.Close();//закрыть соединение 
             _logger.LogTrace("Закрыть соединение с бд");
 
+
+
             //теперь проверяю настройки: разделяю список на тех, у кого есть IP адрес. и у кого нет IP адреса.
             foreach (DataRow row in table.Rows)
             {
@@ -121,8 +123,7 @@ namespace WorkerService1
 
             }
 
-            //Log.log("72 Нет ip адресов для " + devListNoIP.Count + " контроллеров. А для " +(table.Rows.Count - devListNoIP.Count) + " контроллеров IP адреса имеются.");
-            _logger.LogDebug("72 Есть ip адреса для " + devs.Count + " контроллеров. А для " + (table.Rows.Count - devs.Count) + " контроллеров IP адресов нет.");
+              _logger.LogDebug("72 Есть ip адреса для " + devs.Count + " контроллеров. А для " + (table.Rows.Count - devs.Count) + " контроллеров IP адресов нет.");
 
 
             if (devs.Count == 0)
@@ -163,7 +164,7 @@ namespace WorkerService1
             {
                 thread.Join();
             }
-            _logger.LogTrace($@"thread_end");
+            _logger.LogTrace($@"167 Завершаю работу основного потока.");
             _logger.LogTrace("92 Завершение работы TS3. Время выполнения " + (DateTime.Now - startMain));
             return;
         }
@@ -201,24 +202,11 @@ namespace WorkerService1
             com.SetupString(dev.ip);
             if (com.ReportStatus())//если связь с контроллером имеется, то продолжаю работу
             {
-                //lineStat += "|DevConnectOk:" + (DateTime.Now - _start);
-
-                //начинаю формировать список команд для контроллера для последующей обработки
-                //DataTable table = DB.GetComandForDevice(con, dev.id);
-
-
-                //lineStat += "|GetComandForDevice:" + (DateTime.Now - _start);
-                start = DateTime.Now;
-               
-                //lineStat += "|startOneDev:" + (DateTime.Now - _start);
-
+                
                 // выполнение команд для указанного контролллера.
                 OneDev(con, _logger,dev, com);
 
-                //lineStat += "|stopOneDev:" + (DateTime.Now - _start);
-
-
-            }
+                           }
             else // если нет связи, то увеличиваяю количество попыток с указанием, что нет связи
             {
                 //нет связи - это происходит на 2,2 сек после старта программы
@@ -237,7 +225,7 @@ namespace WorkerService1
             con.Close();//закрыл подключение к БД СКУД
             //lineStat += "|conClose:" + (DateTime.Now - _start);
 
-            _logger.LogDebug("223  " + lineStat + "|Time_execite:" + (DateTime.Now - start));
+            _logger.LogDebug("223  " + lineStat + "|Time_execute:" + (DateTime.Now - start));
         }
        
 
@@ -253,8 +241,8 @@ namespace WorkerService1
 
             //беру список карт для точек прохода указанного контроллера
             DataTable table = DB.GetComandForDevice(con, dev.id);
-            Console.WriteLine(@$"281 sql GetComandForDevice_{DateTime.Now - start}");
-            _logger.LogDebug(@$"281 sql GetComandForDevice id_dev= {dev.id} time_exec:{DateTime.Now - start}");
+            //Console.WriteLine(@$"281 sql GetComandForDevice_{DateTime.Now - start}");
+            _logger.LogDebug(@$"281 sql GetComandForDevice id_dev= {dev.id} count {table.Rows.Count} time_exec:{DateTime.Now - start}");
             start = DateTime.Now;
 
             //собираю команды в один список cmds
@@ -267,6 +255,8 @@ namespace WorkerService1
 
             }
 
+            _logger.LogDebug(@$"258 Для id_dev= {dev.id} имеется {cmds.Count()} команд записи/удаления");
+
             //а теперь обрабаываю список команд cmds
             foreach (Command cmd in cmds)
             {
@@ -274,7 +264,7 @@ namespace WorkerService1
                // anser = com.ComandExclude(cmd.command);//выполнил команду
                 answer = com.ComandExecute(cmd.command);//выполнил команду
                 AfterComand(answer, con, cmd.dataRow,_logger);//зафиксировал результат в базе данных
-                string log = $@"288 {dev.id}  | {cmd.dataRow["id_reader"]} | {dev.ip} | {cmd.command} > {answer}";
+                string log = $@"288 id_dev={dev.id}  | reader  {cmd.dataRow["id_reader"]} | IP {dev.ip} | {cmd.command} > {answer}";
                 _logger.LogTrace(log);//зафиксировал результат в лог-файле
             }
           
@@ -300,12 +290,12 @@ namespace WorkerService1
         }
         private static void AfterComand(string anser, FbConnection con, DataRow? row,ILogger _logger)
         {
-            string log = $@"300 {anser}";
-            _logger.LogTrace(log, LogLevel.Trace);//зафиксировал результат в лог-файле
+            //string log = $@"300 {anser}";
+            //_logger.LogTrace(log, LogLevel.Trace);//зафиксировал результат в лог-файле
             switch ((int)row["operation"])
             {
                 case 1://1 - добавление карты в контроллер.
-                    if (anser.Contains("OK"))
+                    if (anser.ToUpper().Contains("OK"))
                     {
                         DB.UpdateIdxCard(con, row, anser, true);//заполнить load_result, load_time, id_card_in_dev=null
                         DB.DeleteCardInDev(con, row);//удалить строку из cardindev
@@ -318,7 +308,7 @@ namespace WorkerService1
                     break;
                 case 2://удаление карты из контроллера
 
-                    if (anser.Contains("OK"))
+                    if (anser.ToUpper().Contains("OK"))
                     {
                         DB.DeleteCardInDev(con, row);
                     }
